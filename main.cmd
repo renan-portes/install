@@ -77,8 +77,6 @@ if /i "%installOffice%" equ "s" (
     echo Pulando a instalacao do Microsoft Office.
 )
 
-pause
-
 timeout 2 >nul
 
 :: Pergunta sobre a ativação do Windows/Office
