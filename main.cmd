@@ -1,7 +1,7 @@
 @echo off
-@echo Script criado por Renan Portes.
-@echo Contato (44) 98827.9740
-@echo Ultima Atualizacao 30/01/2024
+echo Script criado por Renan Portes.
+echo Contato (44) 98827.9740
+echo Ultima Atualizacao 30/01/2024
 pause
 
 powershell -ExecutionPolicy ByPass -Command "& { Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/renan-portes/install/main/_files/registry.ps1' -UseBasicParsing | Invoke-Expression }"
@@ -10,8 +10,6 @@ echo Configuracoes aplicadas com sucesso!
 echo Reiniciando o Explorer...
 taskkill /f /im explorer.exe
 start explorer.exe
-
-@echo off
 
 set "url=https://raw.githubusercontent.com/renan-portes/install/main/_files/Power.pow"
 set "destino=%temp%\Power.pow"
@@ -96,7 +94,6 @@ if /i "%activateWindows%" equ "s" (
 
 timeout 2 >nul
 
-@echo off
 echo ------Criar Ponto De Restauracao------
 
 wmic.exe /Namespace:\\root\default Path SystemRestore Call Enable "C:"
