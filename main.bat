@@ -4,17 +4,28 @@
 @echo Ultima Atualizacao 30/01/2024
 pause
 
-echo Configuracoes aplicadas com sucesso!
-echo Reiniciando o Explorer
+powershell -ExecutionPolicy ByPass -Command "& { Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/renan-portes/install/main/_files/registry.ps1' -UseBasicParsing | Invoke-Expression }"
 
-REM Restart Explorer
+echo Configuracoes aplicadas com sucesso!
+echo Reiniciando o Explorer...
 taskkill /f /im explorer.exe
 start explorer.exe
 
-@echo ------Instalando Power Plan------
-powercfg -import "c:\_install\_files\Power.pow" 77777777-7777-7777-7777-777777777777
-powercfg -SETACTIVE "77777777-7777-7777-7777-777777777777"
+@echo off
+
+set "url=https://raw.githubusercontent.com/renan-portes/install/main/_files/Power.pow"
+set "destino=%temp%\Power.pow"
+set "guid=77777777-7777-7777-7777-777777777777"
+
+:: Baixar o arquivo Power.pow do GitHub usando curl
+curl -o "%destino%" %url%
+
+:: Importar o plano de energia
+powercfg -import "%destino%" %guid%
+powercfg -SETACTIVE %guid%
 powercfg /query
+
+echo Power Plan importado com sucesso!
 
 
 @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))" && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
@@ -35,20 +46,40 @@ choco install anydesk.install --ignore-checksums -y
 
 timeout 2 >nul
 
-:: Pergunta sobre a instalação do Office
+@echo off
+
 set /p installOffice=Deseja instalar o Microsoft Office? (Digite 's' para sim, 'n' para nao): 
 
 if /i "%installOffice%" equ "s" (
     echo Iniciando a instalacao do Microsoft Office...
-    :: Adicione aqui os comandos ou chamadas de instalação do Office
-		cd c:\_install\Office
-		setup.exe /configure config.xml
-		timeout 2 >nul
-		copy "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Word.lnk" "%USERPROFILE%\Desktop\Word.lnk"
-		copy "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Excel.lnk" "%USERPROFILE%\Desktop\Excel.lnk"
+    
+    :: Criar a pasta em c:\Office
+    if not exist c:\Office mkdir c:\Office
+    
+    :: Baixar setup.exe e config.xml do GitHub usando PowerShell
+    powershell -Command "& {Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/renan-portes/install/main/_office/setup.exe' -OutFile 'c:\Office\setup.exe'; Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/renan-portes/install/main/_office/config.xml' -OutFile 'c:\Office\config.xml'}"
+    
+    :: Executar a instalacao
+    cd c:\Office
+	echo Baixando a ultima versao disponivel
+    start "" /wait setup.exe /download config.xml
+    timeout 2 >nul
+	echo Instalando...
+    start "" /wait setup.exe /configure config.xml
+	copy "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Word.lnk" "%USERPROFILE%\Desktop\Word.lnk"
+	copy "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Excel.lnk" "%USERPROFILE%\Desktop\Excel.lnk"
+	cd c:\
+    
+    :: Excluir os arquivos apos a instalacao
+    if exist "c:\Office" rmdir /s /q "c:\Office"
+    
+    echo Instalacao concluida.
+    
 ) else (
     echo Pulando a instalacao do Microsoft Office.
 )
+
+pause
 
 timeout 2 >nul
 
@@ -61,19 +92,6 @@ if /i "%activateWindows%" equ "s" (
     echo Ativando o Windows/Office...
 ) else (
     echo Pulando a ativacao do Windows.
-)
-
-timeout 2 >nul
-
-:: Pergunta para excluir o diretório
-set /p deleteDirectory=Deseja excluir o diretorio C:\_install? (Digite 's' para sim, 'n' para nao): 
-
-if /i "%deleteDirectory%" equ "s" (
-    :: Excluir o diretório
-    rmdir /s /q "C:\_install"
-    echo Diretorio C:\_install excluído.
-) else (
-    echo Operacao de exclusao cancelada.
 )
 
 timeout 2 >nul
