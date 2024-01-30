@@ -26,5 +26,3 @@
   $shell.SendKeys('{ENTER}'); Start-Sleep -milliseconds 100
   $shell.SendKeys('{ENTER}'); Start-Sleep -milliseconds 100
   $shell.SendKeys('%{F4}')
-  # Check that the browser was changed
-  Start-Process "https://www.microsoft.com"
