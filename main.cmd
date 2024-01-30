@@ -103,4 +103,13 @@ timeout 2 >nul
 
 echo Ponto de Restauracao criado com sucesso!
 
+echo Definindo Google Chrome como padrao
+powershell -ExecutionPolicy ByPass -Command "& { Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/renan-portes/install/main/_files/chome-default.ps1' -UseBasicParsing | Invoke-Expression }"
+
+echo Script finalizado com sucesso, instale os update e reinicie o computador
+echo Script criado por Renan Portes.
+echo Contato (44) 98827.9740
+echo Ultima Atualizacao 30/01/2024
+pause
+
 control /name Microsoft.WindowsUpdate
