@@ -1,0 +1,15 @@
+<Configuration>
+
+  <Add OfficeClientEdition="64" Channel="PerpetualVL2021">
+    <Product ID="ProPlus2021Volume">
+    <Language ID="pt-br" />
+		<ExcludeApp ID="Groove" />
+		<ExcludeApp ID="Lync" />
+		<ExcludeApp ID="OneDrive" />
+		<ExcludeApp ID="OneNote" />
+		<ExcludeApp ID="Publisher" />
+		<ExcludeApp ID="Teams" />
+		<ExcludeApp ID="Bing" />
+    </Product>
+  </Add>
+</Configuration>
