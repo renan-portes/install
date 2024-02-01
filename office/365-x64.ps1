@@ -16,3 +16,7 @@ Invoke-WebRequest -Uri $xmlUrl -OutFile "$tempFolder\365-x64.xml"
 
 # Execute o comando de instalação do Office
 Start-Process -FilePath "$tempFolder\setup.exe" -ArgumentList "/configure $tempFolder\365-x64.xml" -Wait
+
+Copy-Item "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Word.lnk" "$env:USERPROFILE\Desktop\Word.lnk"
+Copy-Item "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Excel.lnk" "$env:USERPROFILE\Desktop\Excel.lnk"
+Copy-Item "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\PowerPoint.lnk" "$env:USERPROFILE\Desktop\PowerPoint.lnk"
