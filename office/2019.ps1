@@ -1,7 +1,4 @@
-﻿Write-Output "Office 2019"
-
-# Defina as URLs dos arquivos no GitHub
-$setupUrl = "https://raw.githubusercontent.com/renan-portes/install/main/office/setup.exe"
+﻿$setupUrl = "https://raw.githubusercontent.com/renan-portes/install/main/office/setup.exe"
 $xmlUrl = "https://raw.githubusercontent.com/renan-portes/install/main/office/2019.xml"
 
 # Defina o caminho da pasta temporária
