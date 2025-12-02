@@ -20,7 +20,7 @@ function Show-Menu {
     Write-Host ""
     Write-Host " [1] Instalar Essenciais (Chrome, Adobe Reader, WinRAR, AnyDesk)"
     Write-Host " [2] Instalar Office 2024 (Configuração Personalizada)"
-    Write-Host " [3] Aplicar Otimizações (Regedit + Plano de Energia + Logo)"
+    Write-Host " [3] Aplicar Otimizações (Regedit + Plano de Energia)"
     Write-Host " [4] Ativar Windows/Office (MAS Script)"
     Write-Host " [0] Sair"
     Write-Host ""
