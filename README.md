@@ -1,8 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/renan-portes/install/main/logo-win.bmp" width="200" alt="Logo Meu Técnico"/>
-
-# 🛠️ Renan Portes Toolkit
+# 🛠️ WIN 10/11 - Toolkit
 ### Automação Profissional Pós-Formatação
 
 ![PowerShell](https://img.shields.io/badge/PowerShell-5.1%2B-blue?logo=powershell&style=flat-square)
