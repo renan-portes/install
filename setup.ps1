@@ -6,7 +6,7 @@ Contato: (44) 98827.9740
 
 # --- CONFIGURAÇÃO INICIAL ---
 # IMPORTANTE: Troque esta URL pela URL "Raw" do seu repositório no GitHub
-$RepoURL = "https://raw.githubusercontent.com/SEU_USUARIO/renan-toolkit/main"
+$RepoURL = "https://raw.githubusercontent.com/renan-portes/install/main"
 
 # Forçar TLS 1.2 para downloads seguros
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
