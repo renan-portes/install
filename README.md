@@ -2,7 +2,7 @@
 
 <img src="https://raw.githubusercontent.com/renan-portes/install/main/logo-win.bmp" width="200" alt="Logo Meu Técnico"/>
 
-# 🛠️ Renan Portes Toolkit
+# 🛠️ TOOLKIT WIN 10/11
 ### Automação Profissional Pós-Formatação
 
 ![PowerShell](https://img.shields.io/badge/PowerShell-5.1%2B-blue?logo=powershell&style=flat-square)
@@ -14,7 +14,7 @@
 
 </div>
 
-## 🚀 Como Executar
+##  Como Executar
 
 Abra o **PowerShell** como Administrador e cole o comando abaixo:
 
