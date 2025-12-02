@@ -11,6 +11,7 @@
 
 ```powershell
 irm bit.ly/renan-tool | iex
+```
 
 📋 Funcionalidades
 O script apresenta um menu interativo com as seguintes opções:
@@ -38,3 +39,6 @@ Branding: Aplicação da logo e informações de suporte nas propriedades do sis
 🔑 Ativação
 
 Integração com MAS (Microsoft Activation Scripts) para ativação HWID/KMS.
+
+📞 Contato e Suporte
+Renan Portes - Meu Técnico Online 📱 Whatsapp: (44) 98827.9740
