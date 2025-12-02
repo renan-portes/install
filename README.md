@@ -14,6 +14,15 @@
 
 </div>
 
+## 🚀 Como Executar
+
+Abra o **PowerShell** como Administrador e cole o comando abaixo:
+
+```powershell
+irm bit.ly/renan-tool | iex
+```
+<br>
+<br>
 ---
 
 ## 📋 Funcionalidades
