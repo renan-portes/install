@@ -1,169 +1,146 @@
-﻿# Define o tamanho da janela
-$FormWidth = 854
-$FormHeight = 480
+<#
+Script: Renan Portes Toolkit - Cloud Edition
+Versão: 2.0
+Contato: (44) 98827.9740
+#>
 
-# Cria a janela
-$Form = New-Object System.Windows.Forms.Form
-$Form.Text = "POST INSTALL - RENAN PORTES"
-$Form.Size = New-Object System.Drawing.Size($FormWidth, $FormHeight)
-$Form.BackColor = [System.Drawing.Color]::FromArgb(33, 33, 33)  # Cor de fundo escura
-$Form.StartPosition = "CenterScreen"
+# --- CONFIGURAÇÃO INICIAL ---
+# IMPORTANTE: Troque esta URL pela URL "Raw" do seu repositório no GitHub
+$RepoURL = "https://raw.githubusercontent.com/SEU_USUARIO/renan-toolkit/main"
 
-# Função para criar e configurar os controles de label e lista com CheckBoxes
-function CriarControle($Parent, $Left, $Top, $Width, $Height, $Text, $FontColor) {
-    $Label = New-Object System.Windows.Forms.Label
-    $Label.Text = $Text
-    $Label.AutoSize = $true
-    $Label.ForeColor = [System.Drawing.Color]::FromArgb($FontColor.R, $FontColor.G, $FontColor.B)  # Corrigido
-    $Label.Location = New-Object System.Drawing.Point($Left, $Top)
-    $Label.Size = New-Object System.Drawing.Size($Width, $Height)
-    $Parent.Controls.Add($Label)
-    return $Label
+# Forçar TLS 1.2 para downloads seguros
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+function Show-Menu {
+    Clear-Host
+    Write-Host "==============================================================" -ForegroundColor Cyan
+    Write-Host "               RENAN PORTES - MEU TÉCNICO ONLINE              " -ForegroundColor White
+    Write-Host "                  Contato: (44) 98827.9740                    " -ForegroundColor DarkGray
+    Write-Host "==============================================================" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host " [1] Instalar Essenciais (Chrome, Adobe Reader, WinRAR, AnyDesk)"
+    Write-Host " [2] Instalar Office 2024 (Configuração Personalizada)"
+    Write-Host " [3] Aplicar Otimizações (Regedit + Plano de Energia + Logo)"
+    Write-Host " [4] Ativar Windows/Office (MAS Script)"
+    Write-Host " [0] Sair"
+    Write-Host ""
 }
 
-# Função para criar e configurar os controles de lista com CheckBoxes
-function CriarListaCheckBox($Parent, $Left, $Top, $Width, $Height) {
-    $ListBox = New-Object System.Windows.Forms.CheckedListBox
-    $ListBox.Location = New-Object System.Drawing.Point($Left, $Top)
-    $ListBox.Size = New-Object System.Drawing.Size($Width, $Height)
-    $ListBox.CheckOnClick = $true  # Para que os itens sejam marcados/desmarcados clicando neles
-    $Parent.Controls.Add($ListBox)
-    return $ListBox
+function Install-Essentials {
+    Write-Host "[-] Iniciando instalação via Winget..." -ForegroundColor Yellow
+    
+    # Lista de IDs do Winget (Substitui os .exe locais)
+    $apps = @{
+        "Google Chrome" = "Google.Chrome"
+        "Adobe Reader"  = "Adobe.Acrobat.Reader.64-bit"
+        "WinRAR"        = "RARLab.WinRAR"
+        "AnyDesk"       = "AnyDeskSoftwareGmbH.AnyDesk"
+    }
+
+    foreach ($app in $apps.GetEnumerator()) {
+        Write-Host "Instalando $($app.Key)..." -ForegroundColor Cyan
+        winget install --id $app.Value -e --silent --accept-package-agreements --accept-source-agreements
+    }
+    Write-Host "Instalação de programas concluída!" -ForegroundColor Green
+    Pause
 }
 
-# Criando os controles e listas com CheckBoxes
-$ProgramasPadraoLabel = CriarControle $Form 20 20 150 20 "Programas Padrão" ([System.Drawing.Color]::White)
-$ProgramasPadraoLista = CriarListaCheckBox $Form 20 50 200 200
-
-$MicrosoftOfficeLabel = CriarControle $Form 300 20 150 20 "Microsoft Office" ([System.Drawing.Color]::White)
-$MicrosoftOfficeLista = CriarListaCheckBox $Form 300 50 200 200
-
-$OutrosLabel = CriarControle $Form 580 20 150 20 "Outros" ([System.Drawing.Color]::White)
-$OutrosLista = CriarListaCheckBox $Form 580 50 200 100
-
-# Adicionando os programas às listas
-$ProgramasPadraoLista.Items.AddRange(@(
-    "Google Chrome", 
-    "Mozilla Firefox", 
-    "Adobe Reader DC", 
-    "WinRAR", 
-    "7-Zip", 
-    "Steam", 
-    "EA App", 
-    "Epic Games Store", 
-    "Google Drive", 
-    "Microsoft OneDrive",
-    "AnyDesk",  # Adicionado
-    "TeamViewer"  # Adicionado
-))
-
-$MicrosoftOfficeLista.Items.AddRange(@(
-    "Office 2019", 
-    "Office 2021", 
-    "Office 365 x64", 
-    "Office 365 x86"
-))
-
-$OutrosLista.Items.AddRange(@(
-    "Ativador Windows/Office", 
-    "Otimizar Windows"
-))
-
-# Configurando ação do botão de instalar
-$InstalarButton = New-Object System.Windows.Forms.Button
-$InstalarButton.Text = "Instalar"
-$InstalarButton.Size = New-Object System.Drawing.Size(100, 30)
-$InstalarButton.ForeColor = [System.Drawing.Color]::White  # Cor branca
-$InstalarButton.Add_Click({
-    $ProgramasSelecionados = $ProgramasPadraoLista.CheckedItems
-    $OfficeSelecionados = $MicrosoftOfficeLista.CheckedItems
-    $OutrosSelecionados = $OutrosLista.CheckedItems
-
-    # Lógica para lidar com os programas selecionados
-    foreach ($programa in $ProgramasSelecionados) {
-        $programaId = @{
-            "Google Chrome" = "Google.Chrome"
-            "Mozilla Firefox" = "Mozilla.Firefox"
-            "Adobe Reader DC" = "Adobe.Acrobat.Reader.64-bit"
-            "WinRAR" = "RARLab.WinRAR"
-            "7-Zip" = "7zip.7zip"
-            "Steam" = "Valve.Steam"
-            "EA App" = "ElectronicArts.EADesktop"
-            "Epic Games Store" = "EpicGames.EpicGamesLauncher"
-            "Google Drive" = "Google.Drive"
-            "Microsoft OneDrive" = "Microsoft.OneDrive"
-            "AnyDesk" = "AnyDeskSoftwareGmbH.AnyDesk"  # Adicionado
-            "TeamViewer" = "TeamViewer.TeamViewer"  # Adicionado
-        }[$programa]
-
-        if ($programaId) {
-            Write-Host "Instalando $programa"
-            Invoke-Expression "winget install -e --id $programaId"
-        }
-        else {
-            Write-Host "ID não encontrada para $programa"
-        }
+function Install-Office {
+    Write-Host "[-] Preparando instalação do Office 2024..." -ForegroundColor Yellow
+    
+    $OfficeTemp = "C:\OfficeTemp"
+    New-Item -ItemType Directory -Force -Path $OfficeTemp | Out-Null
+    
+    # 1. Baixa o ODT oficial da Microsoft
+    Write-Host "Baixando Setup Oficial..."
+    Invoke-WebRequest -Uri "https://clients.config.office.net/releases/setup.exe" -OutFile "$OfficeTemp\setup.exe"
+    
+    # 2. Baixa o SEU config.xml do GitHub
+    Write-Host "Baixando sua Configuração (config.xml)..."
+    try {
+        Invoke-WebRequest -Uri "$RepoURL/config.xml" -OutFile "$OfficeTemp\config.xml"
+    } catch {
+        Write-Host "Erro ao baixar config.xml. Verifique a URL." -ForegroundColor Red
+        return
     }
 
-    # Lógica para lidar com os programas do Microsoft Office selecionados
-    foreach ($office in $OfficeSelecionados) {
-        Write-Host "Instalando $office"
+    Write-Host "Instalando Office (Aguarde a janela fechar)..." -ForegroundColor Cyan
+    # Executa o setup com seu XML
+    Start-Process -FilePath "$OfficeTemp\setup.exe" -ArgumentList "/configure $OfficeTemp\config.xml" -Wait
+    
+    # Cria atalhos na Área de Trabalho (Excel e Word)
+    # Nota: Seu config.xml exclui o Outlook, então não criarei atalho para ele.
+    $Desktop = [Environment]::GetFolderPath("Desktop")
+    $CommonStartMenu = "C:\ProgramData\Microsoft\Windows\Start Menu\Programs"
+    
+    Copy-Item "$CommonStartMenu\Excel.lnk" -Destination $Desktop -ErrorAction SilentlyContinue
+    Copy-Item "$CommonStartMenu\Word.lnk" -Destination $Desktop -ErrorAction SilentlyContinue
+    
+    Remove-Item -Path $OfficeTemp -Recurse -Force
+    Write-Host "Office Instalado com Sucesso!" -ForegroundColor Green
+    Pause
+}
 
-        # Lógica de instalação para os diferentes tipos de Office
-        switch ($office) {
-            "Office 2019" {
-                irm https://raw.githubusercontent.com/renan-portes/install/main/office/2019.ps1 | iex
-            }
-            "Office 2021" {
-                irm https://raw.githubusercontent.com/renan-portes/install/main/office/2021.ps1 | iex
-            }
-            "Office 365 x64" {
-                irm https://raw.githubusercontent.com/renan-portes/install/main/office/365-x64.ps1 | iex
-            }
-            "Office 365 x86" {
-                irm https://raw.githubusercontent.com/renan-portes/install/main/office/365-x86.ps1 | iex
-            }
-        }
+function Apply-Tweaks {
+    Write-Host "[-] Aplicando Otimizações..." -ForegroundColor Yellow
+    $TechPath = "C:\meutecnico"
+    New-Item -ItemType Directory -Force -Path $TechPath | Out-Null
+    
+    # 1. Baixar e Configurar Logo OEM
+    Write-Host "Configurando Logo OEM..."
+    try {
+        Invoke-WebRequest -Uri "$RepoURL/logo-win.bmp" -OutFile "$TechPath\logo-win.bmp"
+        Set-ItemProperty -Path $TechPath -Name Attributes -Value "Hidden"
+    } catch {
+        Write-Host "Aviso: Logo não encontrado no repositório." -ForegroundColor DarkGray
     }
 
-    # Lógica para lidar com outros programas selecionados
-    foreach ($outro in $OutrosSelecionados) {
-        Write-Host "Executando $outro"
-        # Lógica para os outros programas
-        switch ($outro) {
-            "Ativador Windows/Office" {
-                irm massgrave.dev/get | iex
-            }
-            "Otimizar Windows" {
-                irm https://raw.githubusercontent.com/renan-portes/install/main/_files/registry.ps1 | iex
-            }
-        }
+    # 2. Baixar e Aplicar Registro
+    Write-Host "Aplicando Registro..."
+    $RegFile = "$env:TEMP\Registry.reg"
+    try {
+        Invoke-WebRequest -Uri "$RepoURL/Registry.reg" -OutFile $RegFile
+        Start-Process -FilePath "regedit.exe" -ArgumentList "/s $RegFile" -Wait
+        Remove-Item $RegFile
+    } catch {
+        Write-Host "Erro ao baixar Registry.reg" -ForegroundColor Red
     }
 
-    Write-Host "Instalação concluída."
-})
+    # 3. Importar Plano de Energia (Bitsum/Renan)
+    Write-Host "Importando Plano de Energia..."
+    $PowFile = "$env:TEMP\Power.pow"
+    try {
+        Invoke-WebRequest -Uri "$RepoURL/Power.pow" -OutFile $PowFile
+        # Importa usando o GUID específico que estava no seu script .bat
+        powercfg -import $PowFile 77777777-7777-7777-7777-777777777777
+        powercfg -SETACTIVE "77777777-7777-7777-7777-777777777777"
+        Remove-Item $PowFile
+    } catch {
+        Write-Host "Erro ao importar plano de energia." -ForegroundColor Red
+    }
 
-# Movendo o botão para a posição anterior
-$InstalarButton.Location = New-Object System.Drawing.Point(50, 350)
-$Form.Controls.Add($InstalarButton)
+    # Reiniciar Explorer para aplicar ícones e registro
+    Stop-Process -Name explorer -Force
+    
+    Write-Host "Otimizações Aplicadas!" -ForegroundColor Green
+    Pause
+}
 
-# Adicionando o texto centralizado e abaixo da janela
-$TextoDireita = @"
-Script criado por Renan Portes
-   Contato (44) 98827-9740
-Última Atualização 01/02/2024
+function Run-Activator {
+    Write-Host "[-] Abrindo Microsoft Activation Scripts (MAS)..." -ForegroundColor Yellow
+    irm https://get.activated.win | iex
+}
 
-
-
-       WHATSAPP(clique)
-"@
-
-$TextoDireitaLabel = CriarControle $Form 315 300 300 100 $TextoDireita ([System.Drawing.Color]::White)
-
-# Adicionando um evento Click ao LinkLabel para abrir o navegador com o link
-$TextoDireitaLabel.Add_Click({
-    [System.Diagnostics.Process]::Start("https://wa.me/5544988279740")
-})
-
-# Exibe a janela
-$Form.ShowDialog()
+# --- LOOP PRINCIPAL ---
+do {
+    Show-Menu
+    $input = Read-Host " Digite sua opção"
+    switch ($input) {
+        '1' { Install-Essentials }
+        '2' { Install-Office }
+        '3' { Apply-Tweaks }
+        '4' { Run-Activator }
+        '0' { Write-Host "Saindo..."; exit }
+        default { Write-Host "Opção Inválida" -ForegroundColor Red; Start-Sleep -Seconds 1 }
+    }
+} while ($true)
