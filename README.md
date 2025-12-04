@@ -1,7 +1,5 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/renan-portes/install/main/logo-win.bmp" width="200" alt="Logo Meu Técnico"/>
-
 # 🛠️ TOOLKIT WIN 10/11
 ### Automação Profissional Pós-Formatação
 
