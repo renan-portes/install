@@ -1,14 +1,11 @@
 <#
 Script: Renan Portes Toolkit - Cloud Edition
-Versão: 2.1 (Fix Office + Winget)
+Versão: 2.2 (Fix Download Office + Winget)
 Contato: (44) 98827.9740
 #>
 
 # --- CONFIGURAÇÃO INICIAL ---
-# Link do seu repositório (mantive o que você já usa)
 $RepoURL = "https://raw.githubusercontent.com/renan-portes/install/main"
-
-# Forçar TLS 1.2 para downloads seguros
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 function Show-Menu {
@@ -29,9 +26,9 @@ function Show-Menu {
 function Install-Essentials {
     Write-Host "[-] Verificando gerenciador de pacotes (Winget)..." -ForegroundColor Yellow
     
-    # 1. Tenta forçar a instalação do Winget se não existir
+    # 1. Instala Winget se necessário
     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-        Write-Host "Winget não encontrado. Baixando instalador oficial..." -ForegroundColor Cyan
+        Write-Host "Winget não encontrado. Baixando instalador..." -ForegroundColor Cyan
         $wingetUrl = "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
         $wingetPath = "$env:TEMP\winget.msixbundle"
         try {
@@ -39,12 +36,12 @@ function Install-Essentials {
             Add-AppxPackage -Path $wingetPath
             Write-Host "Winget instalado!" -ForegroundColor Green
         } catch {
-            Write-Host "Erro crítico: Não foi possível instalar o Winget. Atualize o Windows." -ForegroundColor Red
+            Write-Host "Erro: Não foi possível instalar o Winget. Prossiga atualizando o Windows." -ForegroundColor Red
             Pause; return
         }
     }
 
-    # 2. Localiza o executável real (necessário em sessões novas)
+    # 2. Localiza o executável correto
     $wingetCmd = "winget"
     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
         $wingetCmd = "$env:LOCALAPPDATA\Microsoft\WindowsApps\winget.exe"
@@ -60,7 +57,6 @@ function Install-Essentials {
 
     foreach ($app in $apps.GetEnumerator()) {
         Write-Host "Instalando $($app.Key)..." -ForegroundColor Cyan
-        # Usa Invoke-Expression para garantir execução correta do caminho
         Invoke-Expression "& '$wingetCmd' install --id $($app.Value) -e --silent --accept-package-agreements --accept-source-agreements"
     }
     Write-Host "Instalação de programas concluída!" -ForegroundColor Green
@@ -71,40 +67,53 @@ function Install-Office {
     Write-Host "[-] Preparando instalação do Office 2024..." -ForegroundColor Yellow
     
     $OfficeTemp = "C:\OfficeTemp"
+    # Remove pasta antiga se existir para evitar conflito
+    if (Test-Path $OfficeTemp) { Remove-Item $OfficeTemp -Recurse -Force }
     New-Item -ItemType Directory -Force -Path $OfficeTemp | Out-Null
     
-    # 1. Baixa o ODT (Ferramenta Oficial) - Link Direto Microsoft
+    # 1. Baixa o ODT com USER-AGENT (A correção principal)
     Write-Host "Baixando Ferramenta de Implantação (ODT)..."
     try {
-        # Link oficial permanente da Microsoft para o ODT
         $odtUrl = "https://go.microsoft.com/fwlink/p/?LinkID=626065"
-        Invoke-WebRequest -Uri $odtUrl -OutFile "$OfficeTemp\odt.exe"
+        # O UserAgent engana o servidor da MS para baixar o arquivo certo
+        Invoke-WebRequest -Uri $odtUrl -OutFile "$OfficeTemp\odt.exe" -UserAgent "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
     } catch {
-        Write-Host "Erro ao baixar ODT. Verifique a internet." -ForegroundColor Red; Pause; return
+        Write-Host "Erro de conexão ao baixar ODT." -ForegroundColor Red; Pause; return
     }
 
-    # 2. Extrai o setup.exe de dentro do odt.exe
-    Write-Host "Extraindo arquivos de instalação..."
-    Start-Process -FilePath "$OfficeTemp\odt.exe" -ArgumentList "/quiet /extract:$OfficeTemp" -Wait
+    # Verifica se o arquivo tem tamanho válido (> 2MB)
+    $fileSize = (Get-Item "$OfficeTemp\odt.exe").Length
+    if ($fileSize -lt 1000000) {
+        Write-Host "Erro: O arquivo baixado está corrompido (tamanho inválido). Tente novamente." -ForegroundColor Red
+        Pause; return
+    }
 
-    # 3. Baixa o SEU config.xml do GitHub
-    Write-Host "Baixando sua Configuração (config.xml)..."
+    # 2. Extrai o setup.exe
+    Write-Host "Extraindo arquivos de instalação..."
+    Start-Sleep -Seconds 2 # Espera liberar o arquivo
+    try {
+        Start-Process -FilePath "$OfficeTemp\odt.exe" -ArgumentList "/quiet /extract:$OfficeTemp" -Wait
+    } catch {
+        Write-Host "Erro ao extrair. Verifique se o antivirus não bloqueou o odt.exe." -ForegroundColor Red; Pause; return
+    }
+
+    # 3. Baixa config.xml
+    Write-Host "Baixando configuração personalizada..."
     try {
         Invoke-WebRequest -Uri "$RepoURL/config.xml" -OutFile "$OfficeTemp\config.xml"
     } catch {
-        Write-Host "Erro ao baixar config.xml do seu GitHub." -ForegroundColor Red; Pause; return
+        Write-Host "Erro ao baixar config.xml." -ForegroundColor Red; Pause; return
     }
 
-    # 4. Executa a instalação
+    # 4. Instala
     if (Test-Path "$OfficeTemp\setup.exe") {
-        Write-Host "Iniciando instalação do Office (Isso pode demorar)..." -ForegroundColor Cyan
+        Write-Host "Iniciando instalação (Aguarde o logo do Office)..." -ForegroundColor Cyan
         Start-Process -FilePath "$OfficeTemp\setup.exe" -ArgumentList "/configure $OfficeTemp\config.xml" -Wait
         Write-Host "Office Instalado com Sucesso!" -ForegroundColor Green
     } else {
-        Write-Host "Erro: setup.exe não foi encontrado após extração." -ForegroundColor Red
+        Write-Host "Erro: setup.exe não apareceu após a extração." -ForegroundColor Red
     }
     
-    # Limpeza e Atalhos
     Remove-Item -Path $OfficeTemp -Recurse -Force -ErrorAction SilentlyContinue
     
     $Desktop = [Environment]::GetFolderPath("Desktop")
@@ -120,7 +129,7 @@ function Apply-Tweaks {
     $TechPath = "C:\meutecnico"
     New-Item -ItemType Directory -Force -Path $TechPath | Out-Null
     
-    Write-Host "Configurando Logo e Registro..."
+    Write-Host "Baixando recursos..."
     try {
         Invoke-WebRequest -Uri "$RepoURL/logo-win.bmp" -OutFile "$TechPath\logo-win.bmp"
         Set-ItemProperty -Path $TechPath -Name Attributes -Value "Hidden"
@@ -129,16 +138,13 @@ function Apply-Tweaks {
         Invoke-WebRequest -Uri "$RepoURL/Registry.reg" -OutFile $RegFile
         Start-Process -FilePath "regedit.exe" -ArgumentList "/s $RegFile" -Wait
         Remove-Item $RegFile
-    } catch { Write-Host "Aviso: Falha ao baixar arquivos de registro/logo." -ForegroundColor DarkGray }
-
-    Write-Host "Importando Plano de Energia..."
-    try {
+        
         $PowFile = "$env:TEMP\Power.pow"
         Invoke-WebRequest -Uri "$RepoURL/Power.pow" -OutFile $PowFile
         powercfg -import $PowFile 77777777-7777-7777-7777-777777777777
         powercfg -SETACTIVE "77777777-7777-7777-7777-777777777777"
         Remove-Item $PowFile
-    } catch { Write-Host "Aviso: Falha no plano de energia." -ForegroundColor DarkGray }
+    } catch { Write-Host "Aviso: Falha ao baixar arquivos auxiliares." -ForegroundColor DarkGray }
 
     Stop-Process -Name explorer -Force
     Write-Host "Otimizações Aplicadas!" -ForegroundColor Green
@@ -146,11 +152,10 @@ function Apply-Tweaks {
 }
 
 function Run-Activator {
-    Write-Host "[-] Abrindo Microsoft Activation Scripts (MAS)..." -ForegroundColor Yellow
+    Write-Host "[-] Abrindo MAS..." -ForegroundColor Yellow
     irm https://get.activated.win | iex
 }
 
-# --- LOOP PRINCIPAL ---
 do {
     Show-Menu
     $input = Read-Host " Digite sua opção"
@@ -160,6 +165,6 @@ do {
         '3' { Apply-Tweaks }
         '4' { Run-Activator }
         '0' { Write-Host "Saindo..."; exit }
-        default { Write-Host "Opção Inválida" -ForegroundColor Red; Start-Sleep -Seconds 1 }
+        default { Write-Host "Opção Inválida"; Start-Sleep -Seconds 1 }
     }
 } while ($true)
