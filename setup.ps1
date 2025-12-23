@@ -1,6 +1,6 @@
 <#
 Script: Renan Portes Toolkit - Cloud Edition
-Versão: 3.4 (Stable Links + Legacy Full)
+Versão: 3.5 (Adobe Web Installer Fix)
 Contato: (44) 98827.9740
 #>
 
@@ -23,16 +23,15 @@ function Show-Menu {
     Write-Host ""
 }
 
-# Função auxiliar para download seguro
+# Função auxiliar para download seguro (Simula um navegador real)
 function Download-File {
     param ($Url, $Path)
-    # Tenta usar curl (mais robusto para links diretos)
     try {
-        $proc = Start-Process "curl.exe" -ArgumentList "-L", "-o", "$Path", "$Url" -NoNewWindow -Wait -PassThru
+        # Adiciona User-Agent para evitar bloqueios (Erro 196 bytes)
+        $proc = Start-Process "curl.exe" -ArgumentList "-L", "-A", "Mozilla/5.0", "-o", "$Path", "$Url" -NoNewWindow -Wait -PassThru
         if ($proc.ExitCode -ne 0) { throw "Curl error" }
     } catch {
-        # Fallback para Invoke-WebRequest
-        Invoke-WebRequest -Uri $Url -OutFile $Path
+        Invoke-WebRequest -Uri $Url -OutFile $Path -UserAgent "Mozilla/5.0"
     }
 }
 
@@ -43,58 +42,37 @@ function Install-Essentials {
     if (Get-Command winget -ErrorAction SilentlyContinue) { $wingetReady = $true }
     
     if (-not $wingetReady) {
-        Write-Host "Winget não detectado. Instalando dependências (Links Diretos)..." -ForegroundColor Cyan
+        Write-Host "Winget não detectado. Tentando configurar..." -ForegroundColor Cyan
+        # Tentativa silenciosa de dependências. Se falhar, vamos direto pro Legacy.
+        $tempPath = "$env:TEMP"
         
-        # 1. VCLibs (Link direto do servidor MS)
-        Write-Host " -> [1/4] VCLibs..."
-        $vclibsPath = "$env:TEMP\vclibs.appx"
-        Download-File "https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx" $vclibsPath
-        Add-AppxPackage -Path $vclibsPath -ErrorAction SilentlyContinue
+        # 1. VCLibs
+        Download-File "https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx" "$tempPath\vclibs.appx"
+        Add-AppxPackage -Path "$tempPath\vclibs.appx" -ErrorAction SilentlyContinue
 
-        # 2. Windows App SDK (CORREÇÃO: Link do GitHub Releases em vez de aka.ms)
-        Write-Host " -> [2/4] Windows App SDK Runtime..."
-        $waSdkPath = "$env:TEMP\AppRuntime.exe"
-        # Link direto da versão 1.6.3 (Estável)
-        Download-File "https://github.com/microsoft/WindowsAppSDK/releases/download/v1.6.3/windowsappruntimeinstall-x64.exe" $waSdkPath
-        
-        # Verifica tamanho (>1MB) para garantir que não é erro
-        if ((Get-Item $waSdkPath).Length -gt 1000000) {
-            Start-Process -FilePath $waSdkPath -ArgumentList "--quiet" -Wait -NoNewWindow
-        } else {
-            Write-Host "    Erro: Download do App SDK falhou (arquivo pequeno)." -ForegroundColor Red
-        }
+        # 2. UI.Xaml
+        Download-File "https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx" "$tempPath\xaml.appx"
+        Add-AppxPackage -Path "$tempPath\xaml.appx" -ErrorAction SilentlyContinue
 
-        # 3. UI.Xaml (Link Github)
-        Write-Host " -> [3/4] UI.Xaml 2.8..."
-        $xamlPath = "$env:TEMP\xaml.appx"
-        Download-File "https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx" $xamlPath
-        Add-AppxPackage -Path $xamlPath -ErrorAction SilentlyContinue
-
-        # 4. Winget Core (Link Github)
-        Write-Host " -> [4/4] Winget Installer..."
-        $wingetPath = "$env:TEMP\winget.msixbundle"
-        Download-File "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle" $wingetPath
-        
+        # 3. Winget
+        Download-File "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle" "$tempPath\winget.msixbundle"
         try {
-            Add-AppxPackage -Path $wingetPath -ErrorAction Stop
-            Write-Host "Winget instalado com sucesso!" -ForegroundColor Green
+            Add-AppxPackage -Path "$tempPath\winget.msixbundle" -ErrorAction Stop
             $wingetReady = $true
+            Write-Host "Winget ativado!" -ForegroundColor Green
         } catch {
-            Write-Host "AVISO: Falha ao registrar Winget. Ativando MODO LEGACY..." -ForegroundColor Yellow
+            Write-Host "Aviso: Winget falhou (Erro de dependência do Windows). Usando instaladores diretos." -ForegroundColor Yellow
             Start-Sleep 2
         }
     }
 
-    # Definição do comando
-    $wingetCmd = "winget"
-    if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-        $wingetCmd = "$env:LOCALAPPDATA\Microsoft\WindowsApps\winget.exe"
-    }
+    $wingetCmd = "$env:LOCALAPPDATA\Microsoft\WindowsApps\winget.exe"
+    if (Get-Command winget -ErrorAction SilentlyContinue) { $wingetCmd = "winget" }
 
     Write-Host "[-] Iniciando instalação de programas..." -ForegroundColor Yellow
     
-    # Tenta usar Winget
-    if ((Test-Path $wingetCmd) -or (Get-Command winget -ErrorAction SilentlyContinue)) {
+    # Tenta Winget apenas se estiver 100% funcional
+    if ($wingetReady -and ((Test-Path $wingetCmd) -or (Get-Command winget -ErrorAction SilentlyContinue))) {
         $apps = @{
             "Google Chrome" = "Google.Chrome"
             "Adobe Reader"  = "Adobe.Acrobat.Reader.64-bit"
@@ -105,11 +83,11 @@ function Install-Essentials {
             Write-Host "Instalando $($app.Key)..." -ForegroundColor Cyan
             try {
                 Start-Process -FilePath $wingetCmd -ArgumentList "install --id $($app.Value) -e --silent --accept-package-agreements --accept-source-agreements" -Wait -NoNewWindow
-            } catch { Write-Host "Erro Winget em $($app.Key). Tentando legado..." -ForegroundColor Red }
+            } catch { Write-Host "Erro Winget. Tentando legado..." -ForegroundColor Red }
         }
     } else {
-        # --- MODO LEGACY (Instalação Direta sem Winget) ---
-        Write-Host ">>> MODO LEGACY ATIVADO (Baixando .exe diretos) <<<" -ForegroundColor Magenta
+        # --- MODO LEGACY (Instaladores Diretos - Mais Robusto) ---
+        Write-Host ">>> MODO INSTALAÇÃO DIRETA ATIVADO <<<" -ForegroundColor Magenta
         
         # Chrome
         Write-Host "Instalando Chrome..."
@@ -123,7 +101,7 @@ function Install-Essentials {
         Download-File "https://www.win-rar.com/fileadmin/winrar-versions/winrar/winrar-x64-701.exe" $rarPath
         if ((Get-Item $rarPath).Length -gt 1000000) {
             Start-Process -FilePath $rarPath -ArgumentList "/S" -Wait
-        } else { Write-Host "Erro download WinRAR" -ForegroundColor Red }
+        }
 
         # AnyDesk
         Write-Host "Instalando AnyDesk..."
@@ -131,13 +109,18 @@ function Install-Essentials {
         Download-File "https://download.anydesk.com/AnyDesk.exe" $anyPath
         Start-Process -FilePath $anyPath -ArgumentList "--install `"$env:ProgramFiles(x86)\AnyDesk`" --start-with-win --silent" -Wait
 
-        # Adobe Reader (Link FTP oficial)
-        Write-Host "Instalando Adobe Reader (Isso demora)..."
-        $readerPath = "$env:TEMP\reader.exe"
-        Download-File "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/2400220191/AcroRdrDC2400220191_pt_BR.exe" $readerPath
-        if ((Get-Item $readerPath).Length -gt 1000000) {
+        # Adobe Reader (WEB INSTALLER - CORREÇÃO)
+        Write-Host "Instalando Adobe Reader (Versão Web - Rápido)..."
+        $readerPath = "$env:TEMP\reader_install.exe"
+        # Link oficial genérico da Adobe (sempre funciona)
+        Download-File "https://admdownload.adobe.com/bin/live/readerdc_pt_br_xa_crd_install.exe" $readerPath
+        
+        if ((Get-Item $readerPath).Length -gt 500000) { # Verifica se baixou > 500kb
+            # Argumentos silenciosos do instalador web
             Start-Process -FilePath $readerPath -ArgumentList "/sAll /rs /msi EULA_ACCEPT=YES" -Wait
-        } else { Write-Host "Erro download Reader" -ForegroundColor Red }
+        } else { 
+            Write-Host "Erro: Falha no download do Adobe Reader." -ForegroundColor Red 
+        }
     }
 
     Write-Host "Fim da instalação!" -ForegroundColor Green
