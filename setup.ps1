@@ -1,6 +1,6 @@
 <#
 Script: Renan Portes Toolkit - Cloud Edition
-Versão: 3.3 (Curl Dependencies Fix)
+Versão: 3.4 (Stable Links + Legacy Full)
 Contato: (44) 98827.9740
 #>
 
@@ -26,11 +26,12 @@ function Show-Menu {
 # Função auxiliar para download seguro
 function Download-File {
     param ($Url, $Path)
-    # Tenta usar curl (mais robusto), se falhar usa webclient
+    # Tenta usar curl (mais robusto para links diretos)
     try {
         $proc = Start-Process "curl.exe" -ArgumentList "-L", "-o", "$Path", "$Url" -NoNewWindow -Wait -PassThru
         if ($proc.ExitCode -ne 0) { throw "Curl error" }
     } catch {
+        # Fallback para Invoke-WebRequest
         Invoke-WebRequest -Uri $Url -OutFile $Path
     }
 }
@@ -42,33 +43,34 @@ function Install-Essentials {
     if (Get-Command winget -ErrorAction SilentlyContinue) { $wingetReady = $true }
     
     if (-not $wingetReady) {
-        Write-Host "Winget não detectado. Baixando dependências via Curl..." -ForegroundColor Cyan
+        Write-Host "Winget não detectado. Instalando dependências (Links Diretos)..." -ForegroundColor Cyan
         
-        # 1. VCLibs
+        # 1. VCLibs (Link direto do servidor MS)
         Write-Host " -> [1/4] VCLibs..."
         $vclibsPath = "$env:TEMP\vclibs.appx"
         Download-File "https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx" $vclibsPath
         Add-AppxPackage -Path $vclibsPath -ErrorAction SilentlyContinue
 
-        # 2. Windows App SDK (A causa do seu erro anterior)
+        # 2. Windows App SDK (CORREÇÃO: Link do GitHub Releases em vez de aka.ms)
         Write-Host " -> [2/4] Windows App SDK Runtime..."
         $waSdkPath = "$env:TEMP\AppRuntime.exe"
-        Download-File "https://aka.ms/windowsappsdk/1.6/windowsappruntimeinstall-x64.exe" $waSdkPath
+        # Link direto da versão 1.6.3 (Estável)
+        Download-File "https://github.com/microsoft/WindowsAppSDK/releases/download/v1.6.3/windowsappruntimeinstall-x64.exe" $waSdkPath
         
-        # Verifica se baixou ok (>1MB)
-        if ((Get-Item $waSdkPath).Length -gt 1000) {
+        # Verifica tamanho (>1MB) para garantir que não é erro
+        if ((Get-Item $waSdkPath).Length -gt 1000000) {
             Start-Process -FilePath $waSdkPath -ArgumentList "--quiet" -Wait -NoNewWindow
         } else {
-            Write-Host "    Erro: Download do AppSDK falhou." -ForegroundColor Red
+            Write-Host "    Erro: Download do App SDK falhou (arquivo pequeno)." -ForegroundColor Red
         }
 
-        # 3. UI.Xaml
+        # 3. UI.Xaml (Link Github)
         Write-Host " -> [3/4] UI.Xaml 2.8..."
         $xamlPath = "$env:TEMP\xaml.appx"
         Download-File "https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx" $xamlPath
         Add-AppxPackage -Path $xamlPath -ErrorAction SilentlyContinue
 
-        # 4. Winget Core
+        # 4. Winget Core (Link Github)
         Write-Host " -> [4/4] Winget Installer..."
         $wingetPath = "$env:TEMP\winget.msixbundle"
         Download-File "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle" $wingetPath
@@ -78,14 +80,12 @@ function Install-Essentials {
             Write-Host "Winget instalado com sucesso!" -ForegroundColor Green
             $wingetReady = $true
         } catch {
-            Write-Host "ERRO FATAL: Falha ao registrar Winget." -ForegroundColor Red
-            Write-Host $_.Exception.Message -ForegroundColor DarkGray
-            Write-Host "Tentando instalar programas via método alternativo (Legacy)..." -ForegroundColor Yellow
+            Write-Host "AVISO: Falha ao registrar Winget. Ativando MODO LEGACY..." -ForegroundColor Yellow
             Start-Sleep 2
         }
     }
 
-    # Definição do comando Winget
+    # Definição do comando
     $wingetCmd = "winget"
     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
         $wingetCmd = "$env:LOCALAPPDATA\Microsoft\WindowsApps\winget.exe"
@@ -93,7 +93,7 @@ function Install-Essentials {
 
     Write-Host "[-] Iniciando instalação de programas..." -ForegroundColor Yellow
     
-    # Se o Winget funcionou, usa ele
+    # Tenta usar Winget
     if ((Test-Path $wingetCmd) -or (Get-Command winget -ErrorAction SilentlyContinue)) {
         $apps = @{
             "Google Chrome" = "Google.Chrome"
@@ -105,25 +105,39 @@ function Install-Essentials {
             Write-Host "Instalando $($app.Key)..." -ForegroundColor Cyan
             try {
                 Start-Process -FilePath $wingetCmd -ArgumentList "install --id $($app.Value) -e --silent --accept-package-agreements --accept-source-agreements" -Wait -NoNewWindow
-            } catch { Write-Host "Erro na instalação de $($app.Key)" -ForegroundColor Red }
+            } catch { Write-Host "Erro Winget em $($app.Key). Tentando legado..." -ForegroundColor Red }
         }
     } else {
-        # FALLBACK: Se o Winget falhar totalmente, baixa os instaladores diretos (Modo de Segurança)
-        Write-Host "Modo Winget Falhou. Baixando instaladores diretos (Chrome/AnyDesk)..." -ForegroundColor Magenta
+        # --- MODO LEGACY (Instalação Direta sem Winget) ---
+        Write-Host ">>> MODO LEGACY ATIVADO (Baixando .exe diretos) <<<" -ForegroundColor Magenta
         
         # Chrome
-        Write-Host "Baixando Chrome MSI..."
+        Write-Host "Instalando Chrome..."
         $chromePath = "$env:TEMP\chrome.msi"
         Download-File "https://dl.google.com/chrome/install/googlechromestandaloneenterprise64.msi" $chromePath
         Start-Process "msiexec.exe" -ArgumentList "/i $chromePath /quiet /norestart" -Wait
 
+        # WinRAR
+        Write-Host "Instalando WinRAR..."
+        $rarPath = "$env:TEMP\winrar.exe"
+        Download-File "https://www.win-rar.com/fileadmin/winrar-versions/winrar/winrar-x64-701.exe" $rarPath
+        if ((Get-Item $rarPath).Length -gt 1000000) {
+            Start-Process -FilePath $rarPath -ArgumentList "/S" -Wait
+        } else { Write-Host "Erro download WinRAR" -ForegroundColor Red }
+
         # AnyDesk
-        Write-Host "Baixando AnyDesk..."
+        Write-Host "Instalando AnyDesk..."
         $anyPath = "$env:TEMP\AnyDesk.exe"
         Download-File "https://download.anydesk.com/AnyDesk.exe" $anyPath
-        Start-Process $anyPath -ArgumentList "--install `"$env:ProgramFiles(x86)\AnyDesk`" --start-with-win --silent" -Wait
+        Start-Process -FilePath $anyPath -ArgumentList "--install `"$env:ProgramFiles(x86)\AnyDesk`" --start-with-win --silent" -Wait
 
-        Write-Host "Nota: WinRAR e Adobe Reader ignorados no modo Legacy (links instáveis)." -ForegroundColor DarkGray
+        # Adobe Reader (Link FTP oficial)
+        Write-Host "Instalando Adobe Reader (Isso demora)..."
+        $readerPath = "$env:TEMP\reader.exe"
+        Download-File "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/2400220191/AcroRdrDC2400220191_pt_BR.exe" $readerPath
+        if ((Get-Item $readerPath).Length -gt 1000000) {
+            Start-Process -FilePath $readerPath -ArgumentList "/sAll /rs /msi EULA_ACCEPT=YES" -Wait
+        } else { Write-Host "Erro download Reader" -ForegroundColor Red }
     }
 
     Write-Host "Fim da instalação!" -ForegroundColor Green
@@ -137,8 +151,7 @@ function Install-Office {
     if (Test-Path $OfficeTemp) { Remove-Item $OfficeTemp -Recurse -Force }
     New-Item -ItemType Directory -Force -Path $OfficeTemp | Out-Null
     
-    # Baixa setup.exe do seu GitHub
-    Write-Host "Baixando Instalador..."
+    Write-Host "Baixando Instalador do GitHub..."
     Download-File "$RepoURL/setup.exe" "$OfficeTemp\setup.exe"
 
     Write-Host "Baixando Configuração..."
@@ -151,7 +164,7 @@ function Install-Office {
             Write-Host "Office Instalado!" -ForegroundColor Green
         } catch { Write-Host "Erro ao rodar instalador." -ForegroundColor Red }
     } else {
-        Write-Host "Erro: setup.exe inválido ou não encontrado no GitHub." -ForegroundColor Red
+        Write-Host "Erro: setup.exe não encontrado no GitHub." -ForegroundColor Red
     }
     
     Remove-Item -Path $OfficeTemp -Recurse -Force -ErrorAction SilentlyContinue
