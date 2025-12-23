@@ -1,6 +1,6 @@
 <#
 Script: Renan Portes Toolkit - Cloud Edition
-Versão: 2.2 (Fix Download Office + Winget)
+Versão: 2.3 (Curl Edition)
 Contato: (44) 98827.9740
 #>
 
@@ -67,37 +67,38 @@ function Install-Office {
     Write-Host "[-] Preparando instalação do Office 2024..." -ForegroundColor Yellow
     
     $OfficeTemp = "C:\OfficeTemp"
-    # Remove pasta antiga se existir para evitar conflito
     if (Test-Path $OfficeTemp) { Remove-Item $OfficeTemp -Recurse -Force }
     New-Item -ItemType Directory -Force -Path $OfficeTemp | Out-Null
     
-    # 1. Baixa o ODT com USER-AGENT (A correção principal)
+    # --- CORREÇÃO AQUI (USANDO CURL) ---
     Write-Host "Baixando Ferramenta de Implantação (ODT)..."
+    $odtUrl = "https://go.microsoft.com/fwlink/p/?LinkID=626065"
+    $odtPath = "$OfficeTemp\odt.exe"
+    
+    # Usa Curl.exe para seguir redirects corretamente (-L) e salvar (-o)
+    # Isso resolve o problema de arquivo corrompido
     try {
-        $odtUrl = "https://go.microsoft.com/fwlink/p/?LinkID=626065"
-        # O UserAgent engana o servidor da MS para baixar o arquivo certo
-        Invoke-WebRequest -Uri $odtUrl -OutFile "$OfficeTemp\odt.exe" -UserAgent "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+        Start-Process "curl.exe" -ArgumentList "-L", "-o", "$odtPath", "$odtUrl" -NoNewWindow -Wait
     } catch {
-        Write-Host "Erro de conexão ao baixar ODT." -ForegroundColor Red; Pause; return
+        Write-Host "Erro ao executar Curl. Verifique sua conexão." -ForegroundColor Red; Pause; return
     }
 
-    # Verifica se o arquivo tem tamanho válido (> 2MB)
-    $fileSize = (Get-Item "$OfficeTemp\odt.exe").Length
-    if ($fileSize -lt 1000000) {
-        Write-Host "Erro: O arquivo baixado está corrompido (tamanho inválido). Tente novamente." -ForegroundColor Red
+    # Verifica se baixou um arquivo válido (maior que 3MB)
+    if ((Get-Item $odtPath).Length -lt 3000000) {
+        Write-Host "ERRO CRÍTICO: O download do ODT falhou ou o arquivo está corrompido." -ForegroundColor Red
+        Write-Host "Tamanho do arquivo: $((Get-Item $odtPath).Length) bytes" -ForegroundColor Red
         Pause; return
     }
 
-    # 2. Extrai o setup.exe
+    # Extrai o setup.exe
     Write-Host "Extraindo arquivos de instalação..."
-    Start-Sleep -Seconds 2 # Espera liberar o arquivo
     try {
-        Start-Process -FilePath "$OfficeTemp\odt.exe" -ArgumentList "/quiet /extract:$OfficeTemp" -Wait
+        Start-Process -FilePath $odtPath -ArgumentList "/quiet /extract:$OfficeTemp" -Wait
     } catch {
-        Write-Host "Erro ao extrair. Verifique se o antivirus não bloqueou o odt.exe." -ForegroundColor Red; Pause; return
+        Write-Host "Erro ao extrair. O arquivo pode estar bloqueado pelo Antivirus." -ForegroundColor Red; Pause; return
     }
 
-    # 3. Baixa config.xml
+    # Baixa config.xml do GitHub
     Write-Host "Baixando configuração personalizada..."
     try {
         Invoke-WebRequest -Uri "$RepoURL/config.xml" -OutFile "$OfficeTemp\config.xml"
@@ -105,7 +106,7 @@ function Install-Office {
         Write-Host "Erro ao baixar config.xml." -ForegroundColor Red; Pause; return
     }
 
-    # 4. Instala
+    # Instala
     if (Test-Path "$OfficeTemp\setup.exe") {
         Write-Host "Iniciando instalação (Aguarde o logo do Office)..." -ForegroundColor Cyan
         Start-Process -FilePath "$OfficeTemp\setup.exe" -ArgumentList "/configure $OfficeTemp\config.xml" -Wait
@@ -114,6 +115,7 @@ function Install-Office {
         Write-Host "Erro: setup.exe não apareceu após a extração." -ForegroundColor Red
     }
     
+    # Limpeza
     Remove-Item -Path $OfficeTemp -Recurse -Force -ErrorAction SilentlyContinue
     
     $Desktop = [Environment]::GetFolderPath("Desktop")
