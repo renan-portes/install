@@ -1,10 +1,11 @@
 <#
 Script: Renan Portes Toolkit - Cloud Edition
-Versão: 2.4 (Direct Setup Fix)
+Versão: 3.0 (Self-Hosted Stable)
 Contato: (44) 98827.9740
 #>
 
 # --- CONFIGURAÇÃO INICIAL ---
+# Como seus arquivos estão no GitHub, vamos usar ele como fonte central confiável
 $RepoURL = "https://raw.githubusercontent.com/renan-portes/install/main"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
@@ -26,9 +27,9 @@ function Show-Menu {
 function Install-Essentials {
     Write-Host "[-] Verificando gerenciador de pacotes (Winget)..." -ForegroundColor Yellow
     
-    # 1. Instala Winget se necessário
+    # Verifica e Instala Winget se necessário (Correção para PCs recém formatados)
     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-        Write-Host "Winget não encontrado. Baixando instalador..." -ForegroundColor Cyan
+        Write-Host "Winget não encontrado. Instalando..." -ForegroundColor Cyan
         $wingetUrl = "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
         $wingetPath = "$env:TEMP\winget.msixbundle"
         try {
@@ -36,12 +37,12 @@ function Install-Essentials {
             Add-AppxPackage -Path $wingetPath
             Write-Host "Winget instalado!" -ForegroundColor Green
         } catch {
-            Write-Host "Erro: Não foi possível instalar o Winget. Prossiga atualizando o Windows." -ForegroundColor Red
+            Write-Host "Erro: Falha ao instalar Winget. Atualize o Windows Update primeiro." -ForegroundColor Red
             Pause; return
         }
     }
 
-    # 2. Localiza o executável correto
+    # Garante o caminho do executável
     $wingetCmd = "winget"
     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
         $wingetCmd = "$env:LOCALAPPDATA\Microsoft\WindowsApps\winget.exe"
@@ -70,44 +71,38 @@ function Install-Office {
     if (Test-Path $OfficeTemp) { Remove-Item $OfficeTemp -Recurse -Force }
     New-Item -ItemType Directory -Force -Path $OfficeTemp | Out-Null
     
-    # --- CORREÇÃO: LINK DIRETO PARA O ENGINE (SEM EXTRAÇÃO) ---
-    Write-Host "Baixando Motor de Instalação (Setup.exe)..."
-    # Este link aponta direto para o executável do servidor de produção da MS
-    $setupUrl = "https://officecdn.microsoft.com/pr/wsus/setup.exe"
-    $setupPath = "$OfficeTemp\setup.exe"
-    
+    # 1. Baixa o setup.exe DO SEU GITHUB (Solução Definitiva)
+    Write-Host "Baixando Instalador (setup.exe)..."
     try {
-        # Curl é mais robusto para downloads diretos
-        Start-Process "curl.exe" -ArgumentList "-L", "-o", "$setupPath", "$setupUrl" -NoNewWindow -Wait
+        Invoke-WebRequest -Uri "$RepoURL/setup.exe" -OutFile "$OfficeTemp\setup.exe"
     } catch {
-        Write-Host "Erro ao baixar setup.exe." -ForegroundColor Red; Pause; return
-    }
-
-    # Verifica se o arquivo é válido (> 3MB)
-    if ((Get-Item $setupPath).Length -lt 3000000) {
-        Write-Host "ERRO CRÍTICO: O arquivo baixado parece corrompido ou é apenas uma página web." -ForegroundColor Red
-        Write-Host "Tamanho: $((Get-Item $setupPath).Length) bytes" -ForegroundColor Red
+        Write-Host "ERRO: setup.exe não encontrado no seu GitHub." -ForegroundColor Red
+        Write-Host "Ação necessária: Faça upload do arquivo 'setup.exe' para o repositório 'renan-portes/install'." -ForegroundColor Yellow
         Pause; return
     }
 
-    # Baixa config.xml do GitHub
-    Write-Host "Baixando configuração personalizada..."
+    # 2. Baixa o config.xml DO SEU GITHUB
+    Write-Host "Baixando Configuração (config.xml)..."
     try {
         Invoke-WebRequest -Uri "$RepoURL/config.xml" -OutFile "$OfficeTemp\config.xml"
     } catch {
         Write-Host "Erro ao baixar config.xml." -ForegroundColor Red; Pause; return
     }
 
-    # Instalação Direta
-    Write-Host "Iniciando instalação (Aguarde o logo do Office)..." -ForegroundColor Cyan
-    try {
-        Start-Process -FilePath $setupPath -ArgumentList "/configure $OfficeTemp\config.xml" -Wait
-        Write-Host "Office Instalado com Sucesso!" -ForegroundColor Green
-    } catch {
-        Write-Host "Erro ao iniciar o instalador." -ForegroundColor Red
+    # 3. Executa a instalação
+    if (Test-Path "$OfficeTemp\setup.exe") {
+        Write-Host "Iniciando instalação (Aguarde o logo do Office)..." -ForegroundColor Cyan
+        try {
+            Start-Process -FilePath "$OfficeTemp\setup.exe" -ArgumentList "/configure $OfficeTemp\config.xml" -Wait
+            Write-Host "Office Instalado com Sucesso!" -ForegroundColor Green
+        } catch {
+            Write-Host "Erro ao rodar o instalador." -ForegroundColor Red
+        }
+    } else {
+        Write-Host "Erro: Arquivo setup.exe inválido." -ForegroundColor Red
     }
     
-    # Limpeza
+    # Limpeza e Atalhos
     Remove-Item -Path $OfficeTemp -Recurse -Force -ErrorAction SilentlyContinue
     
     $Desktop = [Environment]::GetFolderPath("Desktop")
@@ -123,8 +118,9 @@ function Apply-Tweaks {
     $TechPath = "C:\meutecnico"
     New-Item -ItemType Directory -Force -Path $TechPath | Out-Null
     
-    Write-Host "Baixando recursos..."
+    Write-Host "Baixando recursos do GitHub..."
     try {
+        # Baixa tudo do seu repositório central
         Invoke-WebRequest -Uri "$RepoURL/logo-win.bmp" -OutFile "$TechPath\logo-win.bmp"
         Set-ItemProperty -Path $TechPath -Name Attributes -Value "Hidden"
         
@@ -138,7 +134,7 @@ function Apply-Tweaks {
         powercfg -import $PowFile 77777777-7777-7777-7777-777777777777
         powercfg -SETACTIVE "77777777-7777-7777-7777-777777777777"
         Remove-Item $PowFile
-    } catch { Write-Host "Aviso: Falha ao baixar arquivos auxiliares." -ForegroundColor DarkGray }
+    } catch { Write-Host "Aviso: Algum arquivo auxiliar não foi encontrado no GitHub." -ForegroundColor DarkGray }
 
     Stop-Process -Name explorer -Force
     Write-Host "Otimizações Aplicadas!" -ForegroundColor Green
@@ -150,6 +146,7 @@ function Run-Activator {
     irm https://get.activated.win | iex
 }
 
+# Loop do Menu
 do {
     Show-Menu
     $input = Read-Host " Digite sua opção"
