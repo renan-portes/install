@@ -1,6 +1,6 @@
 <#
 Script: Renan Portes Toolkit - Cloud Edition
-Versão: 2.3 (Curl Edition)
+Versão: 2.4 (Direct Setup Fix)
 Contato: (44) 98827.9740
 #>
 
@@ -70,32 +70,24 @@ function Install-Office {
     if (Test-Path $OfficeTemp) { Remove-Item $OfficeTemp -Recurse -Force }
     New-Item -ItemType Directory -Force -Path $OfficeTemp | Out-Null
     
-    # --- CORREÇÃO AQUI (USANDO CURL) ---
-    Write-Host "Baixando Ferramenta de Implantação (ODT)..."
-    $odtUrl = "https://go.microsoft.com/fwlink/p/?LinkID=626065"
-    $odtPath = "$OfficeTemp\odt.exe"
+    # --- CORREÇÃO: LINK DIRETO PARA O ENGINE (SEM EXTRAÇÃO) ---
+    Write-Host "Baixando Motor de Instalação (Setup.exe)..."
+    # Este link aponta direto para o executável do servidor de produção da MS
+    $setupUrl = "https://officecdn.microsoft.com/pr/wsus/setup.exe"
+    $setupPath = "$OfficeTemp\setup.exe"
     
-    # Usa Curl.exe para seguir redirects corretamente (-L) e salvar (-o)
-    # Isso resolve o problema de arquivo corrompido
     try {
-        Start-Process "curl.exe" -ArgumentList "-L", "-o", "$odtPath", "$odtUrl" -NoNewWindow -Wait
+        # Curl é mais robusto para downloads diretos
+        Start-Process "curl.exe" -ArgumentList "-L", "-o", "$setupPath", "$setupUrl" -NoNewWindow -Wait
     } catch {
-        Write-Host "Erro ao executar Curl. Verifique sua conexão." -ForegroundColor Red; Pause; return
+        Write-Host "Erro ao baixar setup.exe." -ForegroundColor Red; Pause; return
     }
 
-    # Verifica se baixou um arquivo válido (maior que 3MB)
-    if ((Get-Item $odtPath).Length -lt 3000000) {
-        Write-Host "ERRO CRÍTICO: O download do ODT falhou ou o arquivo está corrompido." -ForegroundColor Red
-        Write-Host "Tamanho do arquivo: $((Get-Item $odtPath).Length) bytes" -ForegroundColor Red
+    # Verifica se o arquivo é válido (> 3MB)
+    if ((Get-Item $setupPath).Length -lt 3000000) {
+        Write-Host "ERRO CRÍTICO: O arquivo baixado parece corrompido ou é apenas uma página web." -ForegroundColor Red
+        Write-Host "Tamanho: $((Get-Item $setupPath).Length) bytes" -ForegroundColor Red
         Pause; return
-    }
-
-    # Extrai o setup.exe
-    Write-Host "Extraindo arquivos de instalação..."
-    try {
-        Start-Process -FilePath $odtPath -ArgumentList "/quiet /extract:$OfficeTemp" -Wait
-    } catch {
-        Write-Host "Erro ao extrair. O arquivo pode estar bloqueado pelo Antivirus." -ForegroundColor Red; Pause; return
     }
 
     # Baixa config.xml do GitHub
@@ -106,13 +98,13 @@ function Install-Office {
         Write-Host "Erro ao baixar config.xml." -ForegroundColor Red; Pause; return
     }
 
-    # Instala
-    if (Test-Path "$OfficeTemp\setup.exe") {
-        Write-Host "Iniciando instalação (Aguarde o logo do Office)..." -ForegroundColor Cyan
-        Start-Process -FilePath "$OfficeTemp\setup.exe" -ArgumentList "/configure $OfficeTemp\config.xml" -Wait
+    # Instalação Direta
+    Write-Host "Iniciando instalação (Aguarde o logo do Office)..." -ForegroundColor Cyan
+    try {
+        Start-Process -FilePath $setupPath -ArgumentList "/configure $OfficeTemp\config.xml" -Wait
         Write-Host "Office Instalado com Sucesso!" -ForegroundColor Green
-    } else {
-        Write-Host "Erro: setup.exe não apareceu após a extração." -ForegroundColor Red
+    } catch {
+        Write-Host "Erro ao iniciar o instalador." -ForegroundColor Red
     }
     
     # Limpeza
