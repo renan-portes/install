@@ -1,6 +1,6 @@
 <#
 Script: Renan Portes Toolkit - Cloud Edition
-Versão: 3.2 (Winget Dependencies Fix)
+Versão: 3.3 (Curl Dependencies Fix)
 Contato: (44) 98827.9740
 #>
 
@@ -23,93 +23,110 @@ function Show-Menu {
     Write-Host ""
 }
 
+# Função auxiliar para download seguro
+function Download-File {
+    param ($Url, $Path)
+    # Tenta usar curl (mais robusto), se falhar usa webclient
+    try {
+        $proc = Start-Process "curl.exe" -ArgumentList "-L", "-o", "$Path", "$Url" -NoNewWindow -Wait -PassThru
+        if ($proc.ExitCode -ne 0) { throw "Curl error" }
+    } catch {
+        Invoke-WebRequest -Uri $Url -OutFile $Path
+    }
+}
+
 function Install-Essentials {
     Write-Host "[-] Verificando ambiente..." -ForegroundColor Yellow
     
-    # Verifica se o Winget já funciona
     $wingetReady = $false
     if (Get-Command winget -ErrorAction SilentlyContinue) { $wingetReady = $true }
     
     if (-not $wingetReady) {
-        Write-Host "Winget não detectado. Instalando dependências críticas..." -ForegroundColor Cyan
+        Write-Host "Winget não detectado. Baixando dependências via Curl..." -ForegroundColor Cyan
         
-        # 1. VCLibs (Necessário para C++ UWP)
-        try {
-            Write-Host " -> [1/4] Instalando VCLibs..."
-            $vclibsUrl = "https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx"
-            $vclibsPath = "$env:TEMP\vclibs.appx"
-            Invoke-WebRequest -Uri $vclibsUrl -OutFile $vclibsPath
-            Add-AppxPackage -Path $vclibsPath -ErrorAction SilentlyContinue
-        } catch { Write-Host "    (Pulo: VCLibs ok ou erro ignorável)" -ForegroundColor DarkGray }
+        # 1. VCLibs
+        Write-Host " -> [1/4] VCLibs..."
+        $vclibsPath = "$env:TEMP\vclibs.appx"
+        Download-File "https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx" $vclibsPath
+        Add-AppxPackage -Path $vclibsPath -ErrorAction SilentlyContinue
 
-        # 2. Windows App SDK (A correção do erro 0x80073CF3)
-        try {
-            Write-Host " -> [2/4] Instalando Windows App SDK (Runtime)..."
-            # Baixa o instalador oficial do Runtime mais recente (1.6+)
-            $waSdkUrl = "https://aka.ms/windowsappsdk/1.6/windowsappruntimeinstall-x64.exe"
-            $waSdkPath = "$env:TEMP\AppRuntime.exe"
-            Invoke-WebRequest -Uri $waSdkUrl -OutFile $waSdkPath
-            # Instala silenciosamente
+        # 2. Windows App SDK (A causa do seu erro anterior)
+        Write-Host " -> [2/4] Windows App SDK Runtime..."
+        $waSdkPath = "$env:TEMP\AppRuntime.exe"
+        Download-File "https://aka.ms/windowsappsdk/1.6/windowsappruntimeinstall-x64.exe" $waSdkPath
+        
+        # Verifica se baixou ok (>1MB)
+        if ((Get-Item $waSdkPath).Length -gt 1000) {
             Start-Process -FilePath $waSdkPath -ArgumentList "--quiet" -Wait -NoNewWindow
-        } catch { Write-Host "    (Erro ao instalar App SDK. O Winget pode falhar.)" -ForegroundColor Red }
+        } else {
+            Write-Host "    Erro: Download do AppSDK falhou." -ForegroundColor Red
+        }
 
-        # 3. UI.Xaml (Necessário para a interface)
-        try {
-            Write-Host " -> [3/4] Instalando UI.Xaml 2.8..."
-            $xamlUrl = "https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx"
-            $xamlPath = "$env:TEMP\xaml.appx"
-            Invoke-WebRequest -Uri $xamlUrl -OutFile $xamlPath
-            Add-AppxPackage -Path $xamlPath -ErrorAction SilentlyContinue
-        } catch { Write-Host "    (Pulo: UI.Xaml erro ignorável)" -ForegroundColor DarkGray }
+        # 3. UI.Xaml
+        Write-Host " -> [3/4] UI.Xaml 2.8..."
+        $xamlPath = "$env:TEMP\xaml.appx"
+        Download-File "https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx" $xamlPath
+        Add-AppxPackage -Path $xamlPath -ErrorAction SilentlyContinue
 
-        # 4. Winget (DesktopAppInstaller)
-        Write-Host " -> [4/4] Instalando Winget..."
-        $wingetUrl = "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
+        # 4. Winget Core
+        Write-Host " -> [4/4] Winget Installer..."
         $wingetPath = "$env:TEMP\winget.msixbundle"
+        Download-File "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle" $wingetPath
         
         try {
-            Invoke-WebRequest -Uri $wingetUrl -OutFile $wingetPath
-            # ErrorAction Stop garante que caia no catch se falhar
             Add-AppxPackage -Path $wingetPath -ErrorAction Stop
             Write-Host "Winget instalado com sucesso!" -ForegroundColor Green
             $wingetReady = $true
         } catch {
-            Write-Host "ERRO FATAL: Não foi possível instalar o Winget." -ForegroundColor Red
-            Write-Host "O erro anterior (dependência) provavelmente não foi resolvido." -ForegroundColor Yellow
-            Write-Host "Tente rodar o Windows Update antes de usar o script." -ForegroundColor Yellow
-            Pause; return
+            Write-Host "ERRO FATAL: Falha ao registrar Winget." -ForegroundColor Red
+            Write-Host $_.Exception.Message -ForegroundColor DarkGray
+            Write-Host "Tentando instalar programas via método alternativo (Legacy)..." -ForegroundColor Yellow
+            Start-Sleep 2
         }
     }
 
-    # Garante o caminho do executável
+    # Definição do comando Winget
     $wingetCmd = "winget"
     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
         $wingetCmd = "$env:LOCALAPPDATA\Microsoft\WindowsApps\winget.exe"
     }
 
-    if (-not (Test-Path $wingetCmd) -and -not (Get-Command winget -ErrorAction SilentlyContinue)) {
-        Write-Host "ERRO: Executável do Winget não encontrado mesmo após instalação." -ForegroundColor Red
-        Pause; return
-    }
-
     Write-Host "[-] Iniciando instalação de programas..." -ForegroundColor Yellow
-    $apps = @{
-        "Google Chrome" = "Google.Chrome"
-        "Adobe Reader"  = "Adobe.Acrobat.Reader.64-bit"
-        "WinRAR"        = "RARLab.WinRAR"
-        "AnyDesk"       = "AnyDeskSoftwareGmbH.AnyDesk"
+    
+    # Se o Winget funcionou, usa ele
+    if ((Test-Path $wingetCmd) -or (Get-Command winget -ErrorAction SilentlyContinue)) {
+        $apps = @{
+            "Google Chrome" = "Google.Chrome"
+            "Adobe Reader"  = "Adobe.Acrobat.Reader.64-bit"
+            "WinRAR"        = "RARLab.WinRAR"
+            "AnyDesk"       = "AnyDeskSoftwareGmbH.AnyDesk"
+        }
+        foreach ($app in $apps.GetEnumerator()) {
+            Write-Host "Instalando $($app.Key)..." -ForegroundColor Cyan
+            try {
+                Start-Process -FilePath $wingetCmd -ArgumentList "install --id $($app.Value) -e --silent --accept-package-agreements --accept-source-agreements" -Wait -NoNewWindow
+            } catch { Write-Host "Erro na instalação de $($app.Key)" -ForegroundColor Red }
+        }
+    } else {
+        # FALLBACK: Se o Winget falhar totalmente, baixa os instaladores diretos (Modo de Segurança)
+        Write-Host "Modo Winget Falhou. Baixando instaladores diretos (Chrome/AnyDesk)..." -ForegroundColor Magenta
+        
+        # Chrome
+        Write-Host "Baixando Chrome MSI..."
+        $chromePath = "$env:TEMP\chrome.msi"
+        Download-File "https://dl.google.com/chrome/install/googlechromestandaloneenterprise64.msi" $chromePath
+        Start-Process "msiexec.exe" -ArgumentList "/i $chromePath /quiet /norestart" -Wait
+
+        # AnyDesk
+        Write-Host "Baixando AnyDesk..."
+        $anyPath = "$env:TEMP\AnyDesk.exe"
+        Download-File "https://download.anydesk.com/AnyDesk.exe" $anyPath
+        Start-Process $anyPath -ArgumentList "--install `"$env:ProgramFiles(x86)\AnyDesk`" --start-with-win --silent" -Wait
+
+        Write-Host "Nota: WinRAR e Adobe Reader ignorados no modo Legacy (links instáveis)." -ForegroundColor DarkGray
     }
 
-    foreach ($app in $apps.GetEnumerator()) {
-        Write-Host "Instalando $($app.Key)..." -ForegroundColor Cyan
-        try {
-            # Executa o Winget. Se falhar, avisa.
-            $proc = Start-Process -FilePath $wingetCmd -ArgumentList "install --id $($app.Value) -e --silent --accept-package-agreements --accept-source-agreements" -PassThru -Wait -NoNewWindow
-        } catch {
-            Write-Host "Erro ao tentar instalar $($app.Key)." -ForegroundColor Red
-        }
-    }
-    Write-Host "Fim da instalação de programas!" -ForegroundColor Green
+    Write-Host "Fim da instalação!" -ForegroundColor Green
     Pause
 }
 
@@ -120,36 +137,26 @@ function Install-Office {
     if (Test-Path $OfficeTemp) { Remove-Item $OfficeTemp -Recurse -Force }
     New-Item -ItemType Directory -Force -Path $OfficeTemp | Out-Null
     
-    # Usa setup.exe hospedado no GitHub (Conforme versão 3.0)
-    Write-Host "Baixando Instalador (setup.exe)..."
-    try {
-        Invoke-WebRequest -Uri "$RepoURL/setup.exe" -OutFile "$OfficeTemp\setup.exe"
-    } catch {
-        Write-Host "ERRO: setup.exe não encontrado no GitHub." -ForegroundColor Red
-        Pause; return
-    }
+    # Baixa setup.exe do seu GitHub
+    Write-Host "Baixando Instalador..."
+    Download-File "$RepoURL/setup.exe" "$OfficeTemp\setup.exe"
 
-    Write-Host "Baixando Configuração (config.xml)..."
-    try {
-        Invoke-WebRequest -Uri "$RepoURL/config.xml" -OutFile "$OfficeTemp\config.xml"
-    } catch {
-        Write-Host "Erro ao baixar config.xml." -ForegroundColor Red; Pause; return
-    }
+    Write-Host "Baixando Configuração..."
+    Download-File "$RepoURL/config.xml" "$OfficeTemp\config.xml"
 
     if (Test-Path "$OfficeTemp\setup.exe") {
-        Write-Host "Iniciando instalação (Aguarde o logo do Office)..." -ForegroundColor Cyan
+        Write-Host "Iniciando instalação..." -ForegroundColor Cyan
         try {
             Start-Process -FilePath "$OfficeTemp\setup.exe" -ArgumentList "/configure $OfficeTemp\config.xml" -Wait
-            Write-Host "Office Instalado com Sucesso!" -ForegroundColor Green
-        } catch {
-            Write-Host "Erro ao rodar o instalador." -ForegroundColor Red
-        }
+            Write-Host "Office Instalado!" -ForegroundColor Green
+        } catch { Write-Host "Erro ao rodar instalador." -ForegroundColor Red }
     } else {
-        Write-Host "Erro: Arquivo setup.exe inválido." -ForegroundColor Red
+        Write-Host "Erro: setup.exe inválido ou não encontrado no GitHub." -ForegroundColor Red
     }
     
     Remove-Item -Path $OfficeTemp -Recurse -Force -ErrorAction SilentlyContinue
     
+    # Atalhos
     $Desktop = [Environment]::GetFolderPath("Desktop")
     $CommonStartMenu = "C:\ProgramData\Microsoft\Windows\Start Menu\Programs"
     Copy-Item "$CommonStartMenu\Excel.lnk" -Destination $Desktop -ErrorAction SilentlyContinue
@@ -165,20 +172,20 @@ function Apply-Tweaks {
     
     Write-Host "Baixando recursos..."
     try {
-        Invoke-WebRequest -Uri "$RepoURL/logo-win.bmp" -OutFile "$TechPath\logo-win.bmp"
+        Download-File "$RepoURL/logo-win.bmp" "$TechPath\logo-win.bmp"
         Set-ItemProperty -Path $TechPath -Name Attributes -Value "Hidden"
         
         $RegFile = "$env:TEMP\Registry.reg"
-        Invoke-WebRequest -Uri "$RepoURL/Registry.reg" -OutFile $RegFile
+        Download-File "$RepoURL/Registry.reg" $RegFile
         Start-Process -FilePath "regedit.exe" -ArgumentList "/s $RegFile" -Wait
         Remove-Item $RegFile
         
         $PowFile = "$env:TEMP\Power.pow"
-        Invoke-WebRequest -Uri "$RepoURL/Power.pow" -OutFile $PowFile
+        Download-File "$RepoURL/Power.pow" $PowFile
         powercfg -import $PowFile 77777777-7777-7777-7777-777777777777
         powercfg -SETACTIVE "77777777-7777-7777-7777-777777777777"
         Remove-Item $PowFile
-    } catch { Write-Host "Aviso: Falha ao baixar arquivos auxiliares." -ForegroundColor DarkGray }
+    } catch { Write-Host "Aviso na aplicação de Tweaks." -ForegroundColor DarkGray }
 
     Stop-Process -Name explorer -Force
     Write-Host "Otimizações Aplicadas!" -ForegroundColor Green
