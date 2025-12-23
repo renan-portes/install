@@ -1,6 +1,6 @@
 <#
 Script: Renan Portes Toolkit - Cloud Edition
-Versão: 3.5 (Adobe Web Installer Fix)
+Versão: 3.7 (Adobe Latest - Fake Browser Header)
 Contato: (44) 98827.9740
 #>
 
@@ -23,15 +23,29 @@ function Show-Menu {
     Write-Host ""
 }
 
-# Função auxiliar para download seguro (Simula um navegador real)
+# Função de Download "Camuflado" (Engana os servidores da Adobe/MS)
 function Download-File {
-    param ($Url, $Path)
+    param ($Url, $Path, $FakeReferer = $null)
+    
+    # Argumentos base do Curl
+    $args = @("-L", "-o", "$Path", "$Url", "--ssl-no-revoke")
+    
+    # Adiciona User-Agent de navegador real
+    $args += "-A"
+    $args += "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    
+    # Se precisar de Referer (Caso da Adobe)
+    if ($FakeReferer) {
+        $args += "-H"
+        $args += "Referer: $FakeReferer"
+    }
+
     try {
-        # Adiciona User-Agent para evitar bloqueios (Erro 196 bytes)
-        $proc = Start-Process "curl.exe" -ArgumentList "-L", "-A", "Mozilla/5.0", "-o", "$Path", "$Url" -NoNewWindow -Wait -PassThru
-        if ($proc.ExitCode -ne 0) { throw "Curl error" }
+        $proc = Start-Process "curl.exe" -ArgumentList $args -NoNewWindow -Wait -PassThru
+        if ($proc.ExitCode -ne 0) { throw "Erro no Curl" }
     } catch {
-        Invoke-WebRequest -Uri $Url -OutFile $Path -UserAgent "Mozilla/5.0"
+        # Fallback simples
+        Invoke-WebRequest -Uri $Url -OutFile $Path
     }
 }
 
@@ -41,38 +55,52 @@ function Install-Essentials {
     $wingetReady = $false
     if (Get-Command winget -ErrorAction SilentlyContinue) { $wingetReady = $true }
     
+    # Tenta consertar Winget se não existir
     if (-not $wingetReady) {
-        Write-Host "Winget não detectado. Tentando configurar..." -ForegroundColor Cyan
-        # Tentativa silenciosa de dependências. Se falhar, vamos direto pro Legacy.
-        $tempPath = "$env:TEMP"
+        Write-Host "Winget não detectado. Baixando dependências (GitHub Direct)..." -ForegroundColor Cyan
+        $temp = $env:TEMP
         
-        # 1. VCLibs
-        Download-File "https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx" "$tempPath\vclibs.appx"
-        Add-AppxPackage -Path "$tempPath\vclibs.appx" -ErrorAction SilentlyContinue
+        # 1. VCLibs (Link Direto)
+        Download-File "https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx" "$temp\vclibs.appx"
+        Add-AppxPackage "$temp\vclibs.appx" -ErrorAction SilentlyContinue
 
-        # 2. UI.Xaml
-        Download-File "https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx" "$tempPath\xaml.appx"
-        Add-AppxPackage -Path "$tempPath\xaml.appx" -ErrorAction SilentlyContinue
+        # 2. Windows App SDK 1.6 (Link Direto GitHub - Sem aka.ms para evitar bloqueio)
+        Write-Host " -> Instalando App SDK..."
+        Download-File "https://github.com/microsoft/WindowsAppSDK/releases/download/v1.6.3/windowsappruntimeinstall-x64.exe" "$temp\AppRuntime.exe"
+        if ((Get-Item "$temp\AppRuntime.exe").Length -gt 1000000) {
+            Start-Process -FilePath "$temp\AppRuntime.exe" -ArgumentList "--quiet" -Wait -NoNewWindow
+        }
 
-        # 3. Winget
-        Download-File "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle" "$tempPath\winget.msixbundle"
+        # 3. UI.Xaml 2.8 (Link Direto GitHub)
+        Download-File "https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx" "$temp\xaml.appx"
+        Add-AppxPackage "$temp\xaml.appx" -ErrorAction SilentlyContinue
+
+        # 4. Winget Core (Link Direto GitHub)
+        Download-File "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle" "$temp\winget.msixbundle"
+        
         try {
-            Add-AppxPackage -Path "$tempPath\winget.msixbundle" -ErrorAction Stop
+            Add-AppxPackage "$temp\winget.msixbundle" -ErrorAction Stop
             $wingetReady = $true
-            Write-Host "Winget ativado!" -ForegroundColor Green
+            Write-Host "Winget Ativado!" -ForegroundColor Green
         } catch {
-            Write-Host "Aviso: Winget falhou (Erro de dependência do Windows). Usando instaladores diretos." -ForegroundColor Yellow
-            Start-Sleep 2
+            Write-Host "Aviso: Winget falhou. O script usará o método tradicional." -ForegroundColor Yellow
         }
     }
 
+    # Define comando
     $wingetCmd = "$env:LOCALAPPDATA\Microsoft\WindowsApps\winget.exe"
     if (Get-Command winget -ErrorAction SilentlyContinue) { $wingetCmd = "winget" }
+    
+    # Validação final do Winget
+    if ($wingetReady -and (Test-Path $wingetCmd)) {
+         try { Start-Process $wingetCmd -ArgumentList "--version" -NoNewWindow -Wait -ErrorAction Stop } 
+         catch { $wingetReady = $false }
+    } else { $wingetReady = $false }
 
     Write-Host "[-] Iniciando instalação de programas..." -ForegroundColor Yellow
     
-    # Tenta Winget apenas se estiver 100% funcional
-    if ($wingetReady -and ((Test-Path $wingetCmd) -or (Get-Command winget -ErrorAction SilentlyContinue))) {
+    if ($wingetReady) {
+        # --- MODO 1: VIA WINGET (Baixa sempre a última versão oficial) ---
         $apps = @{
             "Google Chrome" = "Google.Chrome"
             "Adobe Reader"  = "Adobe.Acrobat.Reader.64-bit"
@@ -83,10 +111,10 @@ function Install-Essentials {
             Write-Host "Instalando $($app.Key)..." -ForegroundColor Cyan
             try {
                 Start-Process -FilePath $wingetCmd -ArgumentList "install --id $($app.Value) -e --silent --accept-package-agreements --accept-source-agreements" -Wait -NoNewWindow
-            } catch { Write-Host "Erro Winget. Tentando legado..." -ForegroundColor Red }
+            } catch { Write-Host "Erro Winget em $($app.Key). Tentando legado..." -ForegroundColor Red }
         }
     } else {
-        # --- MODO LEGACY (Instaladores Diretos - Mais Robusto) ---
+        # --- MODO 2: LEGACY (Links Diretos Oficiais) ---
         Write-Host ">>> MODO INSTALAÇÃO DIRETA ATIVADO <<<" -ForegroundColor Magenta
         
         # Chrome
@@ -99,9 +127,7 @@ function Install-Essentials {
         Write-Host "Instalando WinRAR..."
         $rarPath = "$env:TEMP\winrar.exe"
         Download-File "https://www.win-rar.com/fileadmin/winrar-versions/winrar/winrar-x64-701.exe" $rarPath
-        if ((Get-Item $rarPath).Length -gt 1000000) {
-            Start-Process -FilePath $rarPath -ArgumentList "/S" -Wait
-        }
+        if ((Get-Item $rarPath).Length -gt 1000000) { Start-Process -FilePath $rarPath -ArgumentList "/S" -Wait }
 
         # AnyDesk
         Write-Host "Instalando AnyDesk..."
@@ -109,17 +135,22 @@ function Install-Essentials {
         Download-File "https://download.anydesk.com/AnyDesk.exe" $anyPath
         Start-Process -FilePath $anyPath -ArgumentList "--install `"$env:ProgramFiles(x86)\AnyDesk`" --start-with-win --silent" -Wait
 
-        # Adobe Reader (WEB INSTALLER - CORREÇÃO)
-        Write-Host "Instalando Adobe Reader (Versão Web - Rápido)..."
+        # Adobe Reader (WEB INSTALLER + FAKE HEADER)
+        Write-Host "Instalando Adobe Reader (Web Installer)..."
         $readerPath = "$env:TEMP\reader_install.exe"
-        # Link oficial genérico da Adobe (sempre funciona)
-        Download-File "https://admdownload.adobe.com/bin/live/readerdc_pt_br_xa_crd_install.exe" $readerPath
         
-        if ((Get-Item $readerPath).Length -gt 500000) { # Verifica se baixou > 500kb
-            # Argumentos silenciosos do instalador web
+        # O Pulo do Gato: Simulamos que viemos do site da Adobe
+        # Link oficial do instalador web
+        $adobeUrl = "https://admdownload.adobe.com/bin/live/readerdc_pt_br_xa_crd_install.exe"
+        
+        # Baixa usando cabeçalho fake para evitar erro 196 bytes
+        Download-File $adobeUrl $readerPath "https://get.adobe.com/br/reader/"
+        
+        if ((Get-Item $readerPath).Length -gt 500000) { 
+            # Roda o instalador web silenciosamente (ele baixa a ultima versão sozinho)
             Start-Process -FilePath $readerPath -ArgumentList "/sAll /rs /msi EULA_ACCEPT=YES" -Wait
         } else { 
-            Write-Host "Erro: Falha no download do Adobe Reader." -ForegroundColor Red 
+            Write-Host "ERRO: Adobe bloqueou o download." -ForegroundColor Red 
         }
     }
 
@@ -134,7 +165,8 @@ function Install-Office {
     if (Test-Path $OfficeTemp) { Remove-Item $OfficeTemp -Recurse -Force }
     New-Item -ItemType Directory -Force -Path $OfficeTemp | Out-Null
     
-    Write-Host "Baixando Instalador do GitHub..."
+    # Baixa setup.exe do seu GitHub (Self-Hosted é obrigatório só pro Office)
+    Write-Host "Baixando Instalador..."
     Download-File "$RepoURL/setup.exe" "$OfficeTemp\setup.exe"
 
     Write-Host "Baixando Configuração..."
@@ -147,7 +179,7 @@ function Install-Office {
             Write-Host "Office Instalado!" -ForegroundColor Green
         } catch { Write-Host "Erro ao rodar instalador." -ForegroundColor Red }
     } else {
-        Write-Host "Erro: setup.exe não encontrado no GitHub." -ForegroundColor Red
+        Write-Host "Erro: setup.exe inválido ou não encontrado no GitHub." -ForegroundColor Red
     }
     
     Remove-Item -Path $OfficeTemp -Recurse -Force -ErrorAction SilentlyContinue
