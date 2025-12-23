@@ -1,11 +1,10 @@
 <#
 Script: Renan Portes Toolkit - Cloud Edition
-Versão: 3.0 (Self-Hosted Stable)
+Versão: 3.1 (Dependency Fix)
 Contato: (44) 98827.9740
 #>
 
 # --- CONFIGURAÇÃO INICIAL ---
-# Como seus arquivos estão no GitHub, vamos usar ele como fonte central confiável
 $RepoURL = "https://raw.githubusercontent.com/renan-portes/install/main"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
@@ -25,27 +24,61 @@ function Show-Menu {
 }
 
 function Install-Essentials {
-    Write-Host "[-] Verificando gerenciador de pacotes (Winget)..." -ForegroundColor Yellow
+    Write-Host "[-] Verificando ambiente..." -ForegroundColor Yellow
     
-    # Verifica e Instala Winget se necessário (Correção para PCs recém formatados)
-    if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-        Write-Host "Winget não encontrado. Instalando..." -ForegroundColor Cyan
+    # 1. Tenta identificar se o Winget já funciona
+    $wingetReady = $false
+    if (Get-Command winget -ErrorAction SilentlyContinue) { $wingetReady = $true }
+    
+    if (-not $wingetReady) {
+        Write-Host "Winget não detectado. Iniciando instalação das dependências..." -ForegroundColor Cyan
+        
+        # --- PASSO A: Instalar VCLibs (Obrigatório para Win 10/11 limpo) ---
+        try {
+            Write-Host " -> Instalando VCLibs..."
+            $vclibsUrl = "https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx"
+            $vclibsPath = "$env:TEMP\vclibs.appx"
+            Invoke-WebRequest -Uri $vclibsUrl -OutFile $vclibsPath
+            Add-AppxPackage -Path $vclibsPath -ErrorAction SilentlyContinue
+        } catch { Write-Host " (VCLibs já instalado ou erro ignorável)" -ForegroundColor DarkGray }
+
+        # --- PASSO B: Instalar UI.Xaml (Obrigatório para versões novas do Winget) ---
+        try {
+            Write-Host " -> Instalando UI.Xaml..."
+            # Link oficial da versão 2.7 (mais compatível)
+            $xamlUrl = "https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.7.3/Microsoft.UI.Xaml.2.7.x64.appx"
+            $xamlPath = "$env:TEMP\xaml.appx"
+            Invoke-WebRequest -Uri $xamlUrl -OutFile $xamlPath
+            Add-AppxPackage -Path $xamlPath -ErrorAction SilentlyContinue
+        } catch { Write-Host " (UI.Xaml erro ignorável)" -ForegroundColor DarkGray }
+
+        # --- PASSO C: Instalar Winget ---
+        Write-Host " -> Instalando Winget (App Installer)..."
         $wingetUrl = "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
         $wingetPath = "$env:TEMP\winget.msixbundle"
+        
         try {
             Invoke-WebRequest -Uri $wingetUrl -OutFile $wingetPath
             Add-AppxPackage -Path $wingetPath
-            Write-Host "Winget instalado!" -ForegroundColor Green
+            Write-Host "Winget instalado com sucesso!" -ForegroundColor Green
+            $wingetReady = $true
         } catch {
-            Write-Host "Erro: Falha ao instalar Winget. Atualize o Windows Update primeiro." -ForegroundColor Red
+            Write-Host "ERRO: Não foi possível instalar o Winget." -ForegroundColor Red
+            Write-Host "Dica: Atualize o Windows Update e tente novamente." -ForegroundColor Yellow
             Pause; return
         }
     }
 
-    # Garante o caminho do executável
+    # 2. Define o comando de execução
     $wingetCmd = "winget"
     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+        # Tenta achar no local padrão se não estiver no PATH
         $wingetCmd = "$env:LOCALAPPDATA\Microsoft\WindowsApps\winget.exe"
+    }
+
+    if (-not (Test-Path $wingetCmd) -and -not (Get-Command winget -ErrorAction SilentlyContinue)) {
+        Write-Host "ERRO CRÍTICO: Executável do Winget não encontrado." -ForegroundColor Red
+        Pause; return
     }
 
     Write-Host "[-] Iniciando instalação de programas..." -ForegroundColor Yellow
@@ -58,9 +91,17 @@ function Install-Essentials {
 
     foreach ($app in $apps.GetEnumerator()) {
         Write-Host "Instalando $($app.Key)..." -ForegroundColor Cyan
-        Invoke-Expression "& '$wingetCmd' install --id $($app.Value) -e --silent --accept-package-agreements --accept-source-agreements"
+        # Reset do contador de erro para cada app
+        $err = $null
+        try {
+            # Executa direto, tratando erro
+            $proc = Start-Process -FilePath $wingetCmd -ArgumentList "install --id $($app.Value) -e --silent --accept-package-agreements --accept-source-agreements" -PassThru -Wait -NoNewWindow
+            if ($proc.ExitCode -ne 0) { throw "ExitCode: $($proc.ExitCode)" }
+        } catch {
+            Write-Host "Erro ao instalar $($app.Key). O Winget pode estar atualizando as fontes." -ForegroundColor Red
+        }
     }
-    Write-Host "Instalação de programas concluída!" -ForegroundColor Green
+    Write-Host "Fim da instalação de programas!" -ForegroundColor Green
     Pause
 }
 
@@ -71,17 +112,15 @@ function Install-Office {
     if (Test-Path $OfficeTemp) { Remove-Item $OfficeTemp -Recurse -Force }
     New-Item -ItemType Directory -Force -Path $OfficeTemp | Out-Null
     
-    # 1. Baixa o setup.exe DO SEU GITHUB (Solução Definitiva)
     Write-Host "Baixando Instalador (setup.exe)..."
     try {
         Invoke-WebRequest -Uri "$RepoURL/setup.exe" -OutFile "$OfficeTemp\setup.exe"
     } catch {
         Write-Host "ERRO: setup.exe não encontrado no seu GitHub." -ForegroundColor Red
-        Write-Host "Ação necessária: Faça upload do arquivo 'setup.exe' para o repositório 'renan-portes/install'." -ForegroundColor Yellow
+        Write-Host "Verifique se você fez o upload do arquivo." -ForegroundColor Yellow
         Pause; return
     }
 
-    # 2. Baixa o config.xml DO SEU GITHUB
     Write-Host "Baixando Configuração (config.xml)..."
     try {
         Invoke-WebRequest -Uri "$RepoURL/config.xml" -OutFile "$OfficeTemp\config.xml"
@@ -89,7 +128,6 @@ function Install-Office {
         Write-Host "Erro ao baixar config.xml." -ForegroundColor Red; Pause; return
     }
 
-    # 3. Executa a instalação
     if (Test-Path "$OfficeTemp\setup.exe") {
         Write-Host "Iniciando instalação (Aguarde o logo do Office)..." -ForegroundColor Cyan
         try {
@@ -102,7 +140,6 @@ function Install-Office {
         Write-Host "Erro: Arquivo setup.exe inválido." -ForegroundColor Red
     }
     
-    # Limpeza e Atalhos
     Remove-Item -Path $OfficeTemp -Recurse -Force -ErrorAction SilentlyContinue
     
     $Desktop = [Environment]::GetFolderPath("Desktop")
@@ -118,9 +155,8 @@ function Apply-Tweaks {
     $TechPath = "C:\meutecnico"
     New-Item -ItemType Directory -Force -Path $TechPath | Out-Null
     
-    Write-Host "Baixando recursos do GitHub..."
+    Write-Host "Baixando recursos..."
     try {
-        # Baixa tudo do seu repositório central
         Invoke-WebRequest -Uri "$RepoURL/logo-win.bmp" -OutFile "$TechPath\logo-win.bmp"
         Set-ItemProperty -Path $TechPath -Name Attributes -Value "Hidden"
         
@@ -134,7 +170,7 @@ function Apply-Tweaks {
         powercfg -import $PowFile 77777777-7777-7777-7777-777777777777
         powercfg -SETACTIVE "77777777-7777-7777-7777-777777777777"
         Remove-Item $PowFile
-    } catch { Write-Host "Aviso: Algum arquivo auxiliar não foi encontrado no GitHub." -ForegroundColor DarkGray }
+    } catch { Write-Host "Aviso: Falha ao baixar arquivos auxiliares." -ForegroundColor DarkGray }
 
     Stop-Process -Name explorer -Force
     Write-Host "Otimizações Aplicadas!" -ForegroundColor Green
@@ -146,7 +182,6 @@ function Run-Activator {
     irm https://get.activated.win | iex
 }
 
-# Loop do Menu
 do {
     Show-Menu
     $input = Read-Host " Digite sua opção"
