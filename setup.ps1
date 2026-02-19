@@ -95,24 +95,46 @@ function Menu-Navegadores {
             '3' { 
                 Write-Host "`n>> Preparando a instalação do Brave..." -ForegroundColor Cyan
                 
-                # Derruba qualquer tentativa anterior que tenha ficado travada na memória
-                Get-Process "Brave*", "setup" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+                # 1. MATAR PROCESSOS FANTASMAS (Derruba instaladores travados)
+                Get-Process "Brave*", "setup", "braveupdate" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
                 Start-Sleep -Seconds 1
                 
-                Write-Host ">> Baixando versão Enterprise (100% Silenciosa)..." -ForegroundColor Cyan
-                $BravePath = "$env:TEMP\Brave_Silent.exe"
+                Write-Host ">> Limpando rastros de instalações anteriores..." -ForegroundColor Yellow
+                
+                # 2. LIMPEZA DE REGISTRO (Remove as chaves corrompidas do motor Omaha)
+                $LimpezaReg = @(
+                    "HKLM:\SOFTWARE\BraveSoftware", 
+                    "HKLM:\SOFTWARE\WOW6432Node\BraveSoftware", 
+                    "HKCU:\SOFTWARE\BraveSoftware"
+                )
+                foreach ($reg in $LimpezaReg) { 
+                    if (Test-Path $reg) { Remove-Item -Path $reg -Recurse -Force -ErrorAction SilentlyContinue } 
+                }
+                
+                # 3. LIMPEZA DE PASTAS (Apaga lixo de tentativas passadas)
+                $LimpezaPastas = @(
+                    "C:\Program Files (x86)\BraveSoftware", 
+                    "C:\Program Files\BraveSoftware", 
+                    "$env:LOCALAPPDATA\BraveSoftware"
+                )
+                foreach ($pasta in $LimpezaPastas) { 
+                    if (Test-Path $pasta) { Remove-Item -Path $pasta -Recurse -Force -ErrorAction SilentlyContinue } 
+                }
+
+                Write-Host ">> Baixando versão mais recente do servidor oficial..." -ForegroundColor Cyan
+                $BravePath = "$env:TEMP\Brave_Setup.exe"
                 if (Test-Path $BravePath) { Remove-Item $BravePath -Force -ErrorAction SilentlyContinue }
                 
-                # O segredo: Usar o executável "SilentSetup" oficial da Brave para evitar o erro 0x80040c01
-                Get-FileFromWeb -URL "https://github.com/brave/brave-browser/releases/latest/download/BraveBrowserStandaloneSilentSetup.exe" -File $BravePath
+                # 4. DOWNLOAD (Usando o link endpoint oficial e o baixador nativo do Windows)
+                Invoke-WebRequest -Uri "https://laptop-updates.brave.com/latest/winx64" -OutFile $BravePath -UseBasicParsing
                 
                 if (Test-Path $BravePath) {
-                    Write-Host ">> Instalando em segundo plano..." -ForegroundColor Cyan
+                    Write-Host ">> Instalando silenciosamente em segundo plano..." -ForegroundColor Cyan
                     
-                    # Como o EXE já é a versão silenciosa de fábrica, rodamos ele limpo e sem parâmetros!
-                    Start-Process -wait $BravePath
+                    # 5. INSTALAÇÃO (Forçando a nível de sistema para ignorar bloqueios de usuário)
+                    Start-Process -wait $BravePath -ArgumentList "--silent --system-level"
                     
-                    Write-Host " [OK] Brave Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
+                    Write-Host " [OK] Brave Instalado com sucesso!" -ForegroundColor Green; Start-Sleep -Seconds 2
                 } else {
                     Write-Host " [!] Erro ao baixar o instalador!" -ForegroundColor Red; Start-Sleep -Seconds 2
                 }
