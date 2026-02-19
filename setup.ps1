@@ -164,32 +164,12 @@ function Menu-Utilidades {
                 Get-FileFromWeb -URL "https://download.anydesk.com/AnyDesk.exe" -File $AnyDeskPath
                 
                 if (Test-Path $AnyDeskPath) {
-                    Write-Host ">> Executando instalação em segundo plano..." -ForegroundColor Cyan
-                    # Instala na pasta Program Files (x86) e configura para iniciar com o Windows
-                    Start-Process -wait $AnyDeskPath -ArgumentList "--install `"C:\Program Files (x86)\AnyDesk`" --start-with-win --silent"
+                    Write-Host ">> Executando instalação e criando atalhos oficiais..." -ForegroundColor Cyan
                     
-                    Write-Host ">> Forçando a criação dos atalhos..." -ForegroundColor Cyan
-                    $TargetExe = "C:\Program Files (x86)\AnyDesk\AnyDesk.exe"
+                    # Usando os parâmetros nativos da AnyDesk para forçar os atalhos no Menu Iniciar e Desktop
+                    $Argumentos = "--install `"C:\Program Files (x86)\AnyDesk`" --start-with-win --create-shortcuts --create-desktop-icon --silent"
                     
-                    # Espera até 5 segundos para o executável aparecer na pasta final
-                    $tentativas = 0
-                    while (-not (Test-Path $TargetExe) -and $tentativas -lt 5) { Start-Sleep -Seconds 1; $tentativas++ }
-                    
-                    if (Test-Path $TargetExe) {
-                        $WshShell = New-Object -comObject WScript.Shell
-                        
-                        # 1. Cria o atalho na Área de Trabalho
-                        $Desktop = [Environment]::GetFolderPath("Desktop")
-                        $ShortcutDesk = $WshShell.CreateShortcut("$Desktop\AnyDesk.lnk")
-                        $ShortcutDesk.TargetPath = $TargetExe
-                        $ShortcutDesk.Save()
-                        
-                        # 2. Cria o atalho no Menu Iniciar
-                        $StartMenu = [Environment]::GetFolderPath("Programs")
-                        $ShortcutStart = $WshShell.CreateShortcut("$StartMenu\AnyDesk.lnk")
-                        $ShortcutStart.TargetPath = $TargetExe
-                        $ShortcutStart.Save()
-                    }
+                    Start-Process -FilePath $AnyDeskPath -ArgumentList $Argumentos -Wait
                     
                     Write-Host " [OK] AnyDesk Instalado com sucesso!" -ForegroundColor Green; Start-Sleep -Seconds 2
                 } else {
