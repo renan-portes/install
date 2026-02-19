@@ -489,10 +489,10 @@ function Instalar-Office {
     Clear-Host
     Write-Host "[-] Preparando instalação do Office..." -ForegroundColor Yellow
     
-    # 1. MATAR PROCESSOS TRAVADOS (Resolve o erro de "Já está instalado")
-    $processos = Get-Process "setup", "OfficeClickToRun" -ErrorAction SilentlyContinue
+    # 1. MATAR PROCESSOS TRAVADOS (Apenas o setup, deixamos o ClickToRun em paz)
+    $processos = Get-Process "setup" -ErrorAction SilentlyContinue
     if ($processos) {
-        Write-Host " Limpando processos travados de tentativas anteriores..." -ForegroundColor Cyan
+        Write-Host " Limpando instaladores travados de tentativas anteriores..." -ForegroundColor Cyan
         $processos | Stop-Process -Force -ErrorAction SilentlyContinue
         Start-Sleep -Seconds 2
     }
@@ -506,30 +506,22 @@ function Instalar-Office {
     Get-FileFromWeb -URL "$RepoURL/config.xml" -File "$OfficeTemp\config.xml"
 
     if (Test-Path "$OfficeTemp\setup.exe") {
-        Write-Host " Iniciando instalador da Microsoft..." -ForegroundColor Cyan
+        Write-Host " Iniciando instalador da Microsoft (Isso pode levar alguns minutos)..." -ForegroundColor Yellow
         
-        # Inicia o instalador
-        Start-Process "$OfficeTemp\setup.exe" -ArgumentList "/configure `"$OfficeTemp\config.xml`""
-        
-        # 2. ESPERAR O INSTALADOR TERMINAR DE VERDADE
-        Write-Host " Aguardando a finalização da instalação (Isso pode levar alguns minutos)..." -ForegroundColor Yellow
-        Start-Sleep -Seconds 5 
-        
-        while (Get-Process "OfficeClickToRun" -ErrorAction SilentlyContinue) {
-            Start-Sleep -Seconds 5
-        }
+        # 2. INICIA E ESPERA O SETUP TERMINAR (O -Wait nativo faz o trabalho perfeitamente)
+        Start-Process "$OfficeTemp\setup.exe" -ArgumentList "/configure `"$OfficeTemp\config.xml`"" -Wait
         
         Write-Host "`n[+] Office Instalado com sucesso!" -ForegroundColor Green
         
-        # 3. COPIAR ATALHOS DO MENU INICIAR (Respeitando o delay do Windows)
+        # 3. COPIAR ATALHOS DO MENU INICIAR
         Write-Host " Aguardando o Windows gerar os atalhos no Menu Iniciar..." -ForegroundColor Yellow
         $Desktop = [Environment]::GetFolderPath("Desktop")
         $CommonStartMenu = "C:\ProgramData\Microsoft\Windows\Start Menu\Programs"
         $Atalhos = @("Word.lnk", "Excel.lnk", "PowerPoint.lnk", "Access.lnk")
         
-        # O script vai checar a pasta a cada 5 segundos (até 6 vezes) esperando o ícone do Word aparecer
+        # O script vai checar a pasta a cada 5 segundos (aumentei para até 12 tentativas = 1 minuto de tolerância)
         $tentativas = 0
-        while (-not (Test-Path "$CommonStartMenu\Word.lnk") -and $tentativas -lt 6) {
+        while (-not (Test-Path "$CommonStartMenu\Word.lnk") -and $tentativas -lt 12) {
             Start-Sleep -Seconds 5
             $tentativas++
         }
