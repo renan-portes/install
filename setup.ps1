@@ -92,52 +92,11 @@ function Menu-Navegadores {
                 Start-Process -wait "$env:TEMP\Firefox.exe" -ArgumentList "/S" -WindowStyle Hidden
                 Write-Host " [OK] Firefox Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
             }
-            '3' { 
-                Write-Host "`n>> Preparando a instalação do Brave..." -ForegroundColor Cyan
-                
-                # 1. MATAR PROCESSOS FANTASMAS (Derruba instaladores travados)
-                Get-Process "Brave*", "setup", "braveupdate" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-                Start-Sleep -Seconds 1
-                
-                Write-Host ">> Limpando rastros de instalações anteriores..." -ForegroundColor Yellow
-                
-                # 2. LIMPEZA DE REGISTRO (Remove as chaves corrompidas do motor Omaha)
-                $LimpezaReg = @(
-                    "HKLM:\SOFTWARE\BraveSoftware", 
-                    "HKLM:\SOFTWARE\WOW6432Node\BraveSoftware", 
-                    "HKCU:\SOFTWARE\BraveSoftware"
-                )
-                foreach ($reg in $LimpezaReg) { 
-                    if (Test-Path $reg) { Remove-Item -Path $reg -Recurse -Force -ErrorAction SilentlyContinue } 
-                }
-                
-                # 3. LIMPEZA DE PASTAS (Apaga lixo de tentativas passadas)
-                $LimpezaPastas = @(
-                    "C:\Program Files (x86)\BraveSoftware", 
-                    "C:\Program Files\BraveSoftware", 
-                    "$env:LOCALAPPDATA\BraveSoftware"
-                )
-                foreach ($pasta in $LimpezaPastas) { 
-                    if (Test-Path $pasta) { Remove-Item -Path $pasta -Recurse -Force -ErrorAction SilentlyContinue } 
-                }
-
-                Write-Host ">> Baixando versão mais recente do servidor oficial..." -ForegroundColor Cyan
-                $BravePath = "$env:TEMP\Brave_Setup.exe"
-                if (Test-Path $BravePath) { Remove-Item $BravePath -Force -ErrorAction SilentlyContinue }
-                
-                # 4. DOWNLOAD (Usando o link endpoint oficial e o baixador nativo do Windows)
-                Invoke-WebRequest -Uri "https://laptop-updates.brave.com/latest/winx64" -OutFile $BravePath -UseBasicParsing
-                
-                if (Test-Path $BravePath) {
-                    Write-Host ">> Instalando silenciosamente em segundo plano..." -ForegroundColor Cyan
-                    
-                    # 5. INSTALAÇÃO (Forçando a nível de sistema para ignorar bloqueios de usuário)
-                    Start-Process -wait $BravePath -ArgumentList "--silent --system-level"
-                    
-                    Write-Host " [OK] Brave Instalado com sucesso!" -ForegroundColor Green; Start-Sleep -Seconds 2
-                } else {
-                    Write-Host " [!] Erro ao baixar o instalador!" -ForegroundColor Red; Start-Sleep -Seconds 2
-                }
+             '3' { 
+                Write-Host "`n>> Instalando Brave..." -ForegroundColor Cyan
+                Get-FileFromWeb -URL "https://laptop-updates.brave.com/latest/winx64/BraveBrowserSetup.exe" -File "$env:TEMP\Brave.exe"
+                Start-Process -wait "$env:TEMP\Chrome.msi" -ArgumentList "/quiet"
+                Write-Host " [OK] Brave Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
             }
             '0' { return }
             default { Write-Host " Opção Inválida!" -ForegroundColor Red; Start-Sleep -Seconds 1 }
