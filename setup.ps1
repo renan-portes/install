@@ -93,15 +93,28 @@ function Menu-Navegadores {
                 Write-Host " [OK] Firefox Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
             }
             '3' { 
-                Write-Host "`n>> Instalando Brave Browser (Instalador Offline)..." -ForegroundColor Cyan
+                Write-Host "`n>> Preparando a instalação do Brave..." -ForegroundColor Cyan
                 
-                # Usando o Instalador Standalone (Offline) oficial do GitHub para não dar erro de rede
-                Get-FileFromWeb -URL "https://github.com/brave/brave-browser/releases/latest/download/BraveBrowserStandaloneSetup.exe" -File "$env:TEMP\Brave.exe"
+                # 1. Mata qualquer instalador do Brave que ficou travado no fundo
+                Get-Process "Brave*", "setup" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+                Start-Sleep -Seconds 1
                 
-                # Removido o WindowStyle Hidden que causa conflito com o motor do Brave
-                Start-Process -wait "$env:TEMP\Brave.exe" -ArgumentList "--silent --install"
+                Write-Host ">> Baixando Brave Browser (Instalador Offline)..." -ForegroundColor Cyan
                 
-                Write-Host " [OK] Brave Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
+                # 2. Usa um nome de arquivo NOVO para evitar o erro de bloqueio
+                $BravePath = "$env:TEMP\Brave_Offline.exe"
+                if (Test-Path $BravePath) { Remove-Item $BravePath -Force -ErrorAction SilentlyContinue }
+                
+                # Baixa a versão Standalone direto do GitHub
+                Get-FileFromWeb -URL "https://github.com/brave/brave-browser/releases/latest/download/BraveBrowserStandaloneSetup.exe" -File $BravePath
+                
+                if (Test-Path $BravePath) {
+                    Write-Host ">> Instalando silenciosamente..." -ForegroundColor Cyan
+                    Start-Process -wait $BravePath -ArgumentList "--silent --install"
+                    Write-Host " [OK] Brave Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
+                } else {
+                    Write-Host " [!] Erro ao baixar o Brave!" -ForegroundColor Red; Start-Sleep -Seconds 2
+                }
             }
             '0' { return }
             default { Write-Host " Opção Inválida!" -ForegroundColor Red; Start-Sleep -Seconds 1 }
