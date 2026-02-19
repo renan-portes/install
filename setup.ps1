@@ -422,36 +422,52 @@ Windows Registry Editor Version 5.00
 }
 
 # ============================================================================
-# 3. POWER PLAN DE ALTO DESEMPENHO
+# 3. POWER PLAN DE ALTO DESEMPENHO (Bitsum / Process Lasso)
 # ============================================================================
 function Aplicar-PowerPlan {
     Clear-Host
-    Write-Host "[-] Instalando Ultimate Power Plan e Ajustes de Energia..." -ForegroundColor Yellow
+    Write-Host "[-] Instalando Bitsum Highest Performance (Process Lasso)..." -ForegroundColor Yellow
 
-    Write-Host "`n Configurando e ativando esquema de energia Ultimate..." -ForegroundColor Cyan
-    cmd /c "powercfg /duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61 99999999-9999-9999-9999-999999999999 >nul 2>&1"
-    cmd /c "powercfg /SETACTIVE 99999999-9999-9999-9999-999999999999 >nul 2>&1"
+    Write-Host "`n>> Baixando plano de energia otimizado do GitHub..." -ForegroundColor Cyan
+    $PowFile = "$env:TEMP\Power.pow"
+    Get-FileFromWeb -URL "$RepoURL/Power.pow" -File $PowFile
 
-    Write-Host " Limpando planos antigos e desativando Hibernação..." -ForegroundColor Cyan
-    $output = powercfg /L
-    $powerPlans = @()
-    foreach ($line in $output) {
-        if ($line -match ':') {
-            $parse = $line -split ':'
-            $index = $parse[1].Trim().indexof('(')
-            if ($index -gt 0) {
-                $guid = $parse[1].Trim().Substring(0, $index).Trim()
-                if ($guid -ne "99999999-9999-9999-9999-999999999999") { $powerPlans += $guid }
+    if (Test-Path $PowFile) {
+        Write-Host ">> Importando e ativando o plano Bitsum..." -ForegroundColor Cyan
+        # Importa usando o GUID fixo do seu script original
+        cmd /c "powercfg -import `"$PowFile`" 77777777-7777-7777-7777-777777777777 >nul 2>&1"
+        cmd /c "powercfg -SETACTIVE 77777777-7777-7777-7777-777777777777 >nul 2>&1"
+
+        Write-Host ">> Limpando planos antigos da Microsoft e desativando Hibernação..." -ForegroundColor Cyan
+        $output = powercfg /L
+        $powerPlans = @()
+        foreach ($line in $output) {
+            if ($line -match ':') {
+                $parse = $line -split ':'
+                $index = $parse[1].Trim().indexof('(')
+                if ($index -gt 0) {
+                    $guid = $parse[1].Trim().Substring(0, $index).Trim()
+                    # Salva todos os GUIDs para deletar, EXCETO o nosso do Bitsum
+                    if ($guid -ne "77777777-7777-7777-7777-777777777777") { $powerPlans += $guid }
+                }
             }
         }
-    }
-    foreach ($plan in $powerPlans) { cmd /c "powercfg /delete $plan >nul 2>&1" }
-    
-    powercfg /hibernate off
-    cmd /c "reg add `"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Power`" /v `"HiberbootEnabled`" /t REG_DWORD /d `"0`" /f >nul 2>&1"
-    cmd /c "reg add `"HKLM\SYSTEM\ControlSet001\Control\Power\PowerSettings\54533251-82be-4824-96c1-47b60b740d00\0cc5b647-c1df-4637-891a-dec35c318583`" /v `"ValueMax`" /t REG_DWORD /d `"100`" /f >nul 2>&1"
+        # Deleta os outros planos (Economia, Equilibrado, etc)
+        foreach ($plan in $powerPlans) { cmd /c "powercfg /delete $plan >nul 2>&1" }
+        
+        # Desativa hibernação e Fast Boot
+        powercfg /hibernate off
+        cmd /c "reg add `"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Power`" /v `"HiberbootEnabled`" /t REG_DWORD /d `"0`" /f >nul 2>&1"
 
-    Write-Host "`n[+] Plano de Energia otimizado com sucesso!" -ForegroundColor Green
+        Remove-Item $PowFile -Force -ErrorAction SilentlyContinue
+        Write-Host "`n[+] Plano Bitsum ativado com sucesso!" -ForegroundColor Green
+        
+        # Abre a tela de Opções de Energia do Windows para mostrar o resultado
+        Start-Process powercfg.cpl
+    } else {
+        Write-Host "`n[!] ERRO: Arquivo Power.pow não encontrado no seu GitHub." -ForegroundColor Red
+    }
+    
     Pause
 }
 
