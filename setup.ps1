@@ -191,19 +191,19 @@ function Menu-Utilidades {
             '6' { 
                 Write-Host "`n>> Preparando a instalação do Adobe Reader..." -ForegroundColor Cyan
                 
-                # Link direto oficial do servidor da Adobe (Instalador Offline x64 PT-BR)
-                $AdobeUrl = "https://ardownload3.adobe.com/pub/adobe/acrobat/win/AcrobatDC/2500120997/AcroRdrDCx642500120997_pt_BR.exe"
-                $AdobePath = "$env:TEMP\AdobeReaderOffline.exe"
+                # Link da versão MUI (Multilingual) descoberto via ManageEngine
+                $AdobeUrl = "https://ardownload2.adobe.com/pub/adobe/acrobat/win/AcrobatDC/2500121111/AcroRdrDCx642500121111_MUI.exe"
+                $AdobePath = "$env:TEMP\AdobeReaderMUI.exe"
                 
                 if (Test-Path $AdobePath) { Remove-Item $AdobePath -Force -ErrorAction SilentlyContinue }
                 
-                Write-Host ">> Baixando o instalador completo (Aguarde, o arquivo tem aprox. 350MB)..." -ForegroundColor Yellow
+                Write-Host ">> Baixando a versão corporativa (Aguarde, o arquivo tem aprox. 350MB)..." -ForegroundColor Yellow
                 Get-FileFromWeb -URL $AdobeUrl -File $AdobePath
                 
                 if (Test-Path $AdobePath) {
                     Write-Host ">> Executando instalação 100% silenciosa..." -ForegroundColor Cyan
                     
-                    # Argumentos oficiais da Adobe para o ficheiro Offline instalar sem ecrãs de confirmação
+                    # Comando oficial da ManageEngine (/sAll) + Comando para não reiniciar o PC no meio do script (/rs) + Aceitar termos
                     Start-Process -wait $AdobePath -ArgumentList "/sAll /rs /msi EULA_ACCEPT=YES"
                     
                     Write-Host " [OK] Adobe Reader Instalado com sucesso!" -ForegroundColor Green; Start-Sleep -Seconds 2
