@@ -93,9 +93,14 @@ function Menu-Navegadores {
                 Write-Host " [OK] Firefox Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
             }
             '3' { 
-                Write-Host "`n>> Instalando Brave Browser..." -ForegroundColor Cyan
-                Get-FileFromWeb -URL "https://laptop-updates.brave.com/latest/winx64" -File "$env:TEMP\Brave.exe"
-                Start-Process -wait "$env:TEMP\Brave.exe" -ArgumentList "--silent --install" -WindowStyle Hidden
+                Write-Host "`n>> Instalando Brave Browser (Instalador Offline)..." -ForegroundColor Cyan
+                
+                # Usando o Instalador Standalone (Offline) oficial do GitHub para não dar erro de rede
+                Get-FileFromWeb -URL "https://github.com/brave/brave-browser/releases/latest/download/BraveBrowserStandaloneSetup.exe" -File "$env:TEMP\Brave.exe"
+                
+                # Removido o WindowStyle Hidden que causa conflito com o motor do Brave
+                Start-Process -wait "$env:TEMP\Brave.exe" -ArgumentList "--silent --install"
+                
                 Write-Host " [OK] Brave Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
             }
             '0' { return }
