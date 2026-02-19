@@ -489,7 +489,7 @@ function Instalar-Office {
     Clear-Host
     Write-Host "[-] Preparando instalação do Office..." -ForegroundColor Yellow
     
-    # 1. MATAR PROCESSOS TRAVADOS (Resolve o erro de "Já está instalado")
+    # 1. MATAR PROCESSOS TRAVADOS
     $processos = Get-Process "setup", "OfficeClickToRun" -ErrorAction SilentlyContinue
     if ($processos) {
         Write-Host " Limpando processos travados de tentativas anteriores..." -ForegroundColor Cyan
@@ -511,24 +511,35 @@ function Instalar-Office {
         # Inicia o instalador
         Start-Process "$OfficeTemp\setup.exe" -ArgumentList "/configure `"$OfficeTemp\config.xml`""
         
-        # 2. O PULO DO GATO: Esperar o processo real terminar!
+        # Esperar o processo real terminar
         Write-Host " Aguardando a finalização da instalação (Isso pode levar alguns minutos)..." -ForegroundColor Yellow
-        Start-Sleep -Seconds 5 # Dá tempo do processo nascer no Windows
+        Start-Sleep -Seconds 5 
         
         while (Get-Process "OfficeClickToRun" -ErrorAction SilentlyContinue) {
-            Start-Sleep -Seconds 5 # O script fica em loop pausado aqui até o Office terminar de verdade
+            Start-Sleep -Seconds 5
         }
         
         Write-Host "`n[+] Office Instalado com sucesso!" -ForegroundColor Green
         
+        # 2. CRIAÇÃO DE ATALHOS FORÇADA (WScript.Shell)
         Write-Host " Criando atalhos na Área de Trabalho..." -ForegroundColor Cyan
         $Desktop = [Environment]::GetFolderPath("Desktop")
-        $CommonStartMenu = "C:\ProgramData\Microsoft\Windows\Start Menu\Programs"
-        $Atalhos = @("Word.lnk", "Excel.lnk", "PowerPoint.lnk", "Access.lnk")
+        $WshShell = New-Object -comObject WScript.Shell
         
-        foreach ($Atalho in $Atalhos) {
-            if (Test-Path "$CommonStartMenu\$Atalho") {
-                Copy-Item "$CommonStartMenu\$Atalho" -Destination $Desktop -ErrorAction SilentlyContinue
+        # Mapeando os executáveis reais do Office
+        $AppPaths = @{
+            "Word"       = "C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE"
+            "Excel"      = "C:\Program Files\Microsoft Office\root\Office16\EXCEL.EXE"
+            "PowerPoint" = "C:\Program Files\Microsoft Office\root\Office16\POWERPNT.EXE"
+            "Access"     = "C:\Program Files\Microsoft Office\root\Office16\MSACCESS.EXE"
+        }
+
+        foreach ($App in $AppPaths.GetEnumerator()) {
+            # Confirma se o programa realmente instalou antes de criar o atalho
+            if (Test-Path $App.Value) {
+                $Shortcut = $WshShell.CreateShortcut("$Desktop\$($App.Name).lnk")
+                $Shortcut.TargetPath = $App.Value
+                $Shortcut.Save()
             }
         }
         Write-Host " [OK] Atalhos criados com sucesso!" -ForegroundColor Green
@@ -537,7 +548,6 @@ function Instalar-Office {
         Write-Host "`n[!] ERRO: setup.exe não encontrado no seu GitHub." -ForegroundColor Red
     }
     
-    # Só apaga a pasta quando tem certeza absoluta que terminou
     Remove-Item -Path $OfficeTemp -Recurse -Force -ErrorAction SilentlyContinue
     Pause
 }
