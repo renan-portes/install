@@ -111,9 +111,12 @@ function Menu-Utilidades {
         Write-Host "                       UTILIDADES                             " -ForegroundColor White
         Write-Host "==============================================================" -ForegroundColor Yellow
         Write-Host " [1] WinRAR (PT-BR)"
-        Write-Host " [2] AnyDesk"
-        Write-Host " [3] Notepad++"
-        Write-Host " [4] Adobe Reader"
+        Write-Host " [2] 7-Zip"
+        Write-Host " [3] AnyDesk"
+        Write-Host " [4] Discord"
+        Write-Host " [5] Notepad++"
+        Write-Host " [6] Adobe Reader (Completo)"
+        Write-Host " [7] SumatraPDF (Super Leve)"
         Write-Host " [0] Voltar"
         Write-Host ""
         
@@ -126,23 +129,41 @@ function Menu-Utilidades {
                 Write-Host " [OK] WinRAR Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
             }
             '2' { 
+                Write-Host "`n>> Instalando 7-Zip..." -ForegroundColor Cyan
+                Get-FileFromWeb -URL "https://github.com/FR33THYFR33THY/files/raw/main/7%20Zip.exe" -File "$env:TEMP\7Zip.exe"
+                Start-Process -wait "$env:TEMP\7Zip.exe" -ArgumentList "/S"
+                Write-Host " [OK] 7-Zip Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
+            }
+            '3' { 
                 Write-Host "`n>> Instalando AnyDesk..." -ForegroundColor Cyan
                 Get-FileFromWeb -URL "https://download.anydesk.com/AnyDesk.exe" -File "$env:TEMP\AnyDesk.exe"
                 Start-Process -wait "$env:TEMP\AnyDesk.exe" -ArgumentList "--install `"$env:ProgramFiles(x86)\AnyDesk`" --start-with-win --silent"
                 Write-Host " [OK] AnyDesk Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
             }
-            '3' { 
+            '4' { 
+                Write-Host "`n>> Instalando Discord..." -ForegroundColor Cyan
+                Get-FileFromWeb -URL "https://dl.discordapp.net/distro/app/stable/win/x86/1.0.9036/DiscordSetup.exe" -File "$env:TEMP\Discord.exe"
+                Start-Process -wait "$env:TEMP\Discord.exe" -ArgumentList "/s"
+                Write-Host " [OK] Discord Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
+            }
+            '5' { 
                 Write-Host "`n>> Instalando Notepad++..." -ForegroundColor Cyan
                 Get-FileFromWeb -URL "https://github.com/FR33THYFR33THY/files/raw/main/Notepad%20++.exe" -File "$env:TEMP\Notepad++.exe"
                 Start-Process -wait "$env:TEMP\Notepad++.exe" -ArgumentList "/S"
                 Write-Host " [OK] Notepad++ Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
             }
-            '4' { 
+            '6' { 
                 Write-Host "`n>> Instalando Adobe Reader..." -ForegroundColor Cyan
                 $adobeUrl = "https://admdownload.adobe.com/bin/live/readerdc_pt_br_xa_crd_install.exe"
                 Get-FileFromWeb -URL $adobeUrl -File "$env:TEMP\reader_install.exe" -Referer "https://get.adobe.com/br/reader/"
                 Start-Process -wait "$env:TEMP\reader_install.exe" -ArgumentList "/sAll /rs /msi EULA_ACCEPT=YES"
                 Write-Host " [OK] Adobe Reader Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
+            }
+            '7' { 
+                Write-Host "`n>> Instalando SumatraPDF..." -ForegroundColor Cyan
+                Get-FileFromWeb -URL "https://sumatrapdfreader.org/dl/SumatraPDF-3.5.2-64-install.exe" -File "$env:TEMP\SumatraPDF.exe"
+                Start-Process -wait "$env:TEMP\SumatraPDF.exe" -ArgumentList "/S"
+                Write-Host " [OK] SumatraPDF Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
             }
             '0' { return }
             default { Write-Host " Opção Inválida!" -ForegroundColor Red; Start-Sleep -Seconds 1 }
@@ -158,9 +179,11 @@ function Menu-Launchers {
         Write-Host "==============================================================" -ForegroundColor Yellow
         Write-Host " [1] Steam"
         Write-Host " [2] Epic Games"
-        Write-Host " [3] Discord"
-        Write-Host " [4] Battle.net"
-        Write-Host " [5] Valorant / Riot"
+        Write-Host " [3] Battle.net"
+        Write-Host " [4] EA App (Electronic Arts)"
+        Write-Host " [5] Ubisoft Connect"
+        Write-Host " [6] GOG Galaxy"
+        Write-Host " [7] Valorant / Riot"
         Write-Host " [0] Voltar"
         Write-Host ""
         
@@ -179,21 +202,33 @@ function Menu-Launchers {
                 Write-Host " [OK] Epic Games Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
             }
             '3' { 
-                Write-Host "`n>> Instalando Discord..." -ForegroundColor Cyan
-                Get-FileFromWeb -URL "https://dl.discordapp.net/distro/app/stable/win/x86/1.0.9036/DiscordSetup.exe" -File "$env:TEMP\Discord.exe"
-                Start-Process -wait "$env:TEMP\Discord.exe" -ArgumentList "/s"
-                Write-Host " [OK] Discord Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
-            }
-            '4' { 
                 Write-Host "`n>> Instalando Battle.net..." -ForegroundColor Cyan
                 Get-FileFromWeb -URL "https://downloader.battle.net/download/getInstaller?os=win&installer=Battle.net-Setup.exe" -File "$env:TEMP\Battle.net.exe"
                 Start-Process -wait "$env:TEMP\Battle.net.exe" -ArgumentList '--lang=ptBR --installpath="C:\Program Files (x86)\Battle.net"'
                 Write-Host " [OK] Battle.net Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
             }
+            '4' { 
+                Write-Host "`n>> Baixando EA App..." -ForegroundColor Cyan
+                Get-FileFromWeb -URL "https://origin-a.akamaihd.net/EA-Desktop-Client-Download/installer-releases/EAappInstaller.exe" -File "$env:TEMP\EAapp.exe"
+                Start-Process "$env:TEMP\EAapp.exe"
+                Write-Host " [OK] Instalador do EA App Aberto!" -ForegroundColor Green; Start-Sleep -Seconds 2
+            }
             '5' { 
-                Write-Host "`n>> Instalando Valorant..." -ForegroundColor Cyan
+                Write-Host "`n>> Instalando Ubisoft Connect..." -ForegroundColor Cyan
+                Get-FileFromWeb -URL "https://static3.cdn.ubi.com/orbit/launcher_installer/UbisoftConnectInstaller.exe" -File "$env:TEMP\Ubisoft.exe"
+                Start-Process -wait "$env:TEMP\Ubisoft.exe" -ArgumentList "/S"
+                Write-Host " [OK] Ubisoft Connect Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
+            }
+            '6' { 
+                Write-Host "`n>> Baixando GOG Galaxy..." -ForegroundColor Cyan
+                Get-FileFromWeb -URL "https://webinstallers.gog-statics.com/download/GOG_Galaxy_2.0.exe" -File "$env:TEMP\GOG.exe"
+                Start-Process "$env:TEMP\GOG.exe"
+                Write-Host " [OK] Instalador do GOG Aberto!" -ForegroundColor Green; Start-Sleep -Seconds 2
+            }
+            '7' { 
+                Write-Host "`n>> Baixando Valorant..." -ForegroundColor Cyan
                 Get-FileFromWeb -URL "https://valorant.secure.dyn.riotcdn.net/channels/public/x/installer/current/live.live.ap.exe" -File "$env:TEMP\Valorant.exe"
-                Start-Process -wait "$env:TEMP\Valorant.exe"
+                Start-Process "$env:TEMP\Valorant.exe"
                 Write-Host " [OK] Instalador do Valorant Aberto!" -ForegroundColor Green; Start-Sleep -Seconds 2
             }
             '0' { return }
@@ -260,8 +295,8 @@ function Menu-InstaladorGeral {
         Write-Host "==============================================================" -ForegroundColor Yellow
         Write-Host ""
         Write-Host " [1] Navegadores (Chrome, Brave, Firefox)"
-        Write-Host " [2] Utilidades (WinRAR, AnyDesk, Adobe Reader, Notepad++)"
-        Write-Host " [3] Launchers de Jogos (Steam, Epic, Battle.net, Discord, Riot)"
+        Write-Host " [2] Utilidades (WinRAR, 7-Zip, AnyDesk, PDF, etc.)"
+        Write-Host " [3] Launchers de Jogos (Steam, Epic, EA, Ubisoft, etc.)"
         Write-Host " [4] Dependências (C++ All-in-One e DirectX)"
         Write-Host " [0] VOLTAR AO MENU PRINCIPAL"
         Write-Host ""
