@@ -314,57 +314,110 @@ function Menu-InstaladorGeral {
 }
 
 # ============================================================================
-# 2. OTIMIZAÇÕES DE REGISTRO
+# 2. OTIMIZAÇÕES DE REGISTRO E OEM BRANDING (Logo do Técnico)
 # ============================================================================
 function Aplicar-Regedit {
     Clear-Host
-    Write-Host "[-] Aplicando Otimizações de Registro (Performance e Privacidade)..." -ForegroundColor Yellow
+    Write-Host "[-] Aplicando Otimizações de Registro e Marca do Técnico..." -ForegroundColor Yellow
     
+    # 1. Baixando a logo para C:\meutecnico
+    Write-Host ">> Configurando Informações de Suporte (OEM)..." -ForegroundColor Cyan
+    $TechPath = "C:\meutecnico"
+    if (-not (Test-Path $TechPath)) { New-Item -ItemType Directory -Force -Path $TechPath | Out-Null }
+    
+    # Baixa a logo do seu GitHub
+    Get-FileFromWeb -URL "$RepoURL/logo-win.bmp" -File "$TechPath\logo-win.bmp"
+    
+    # Oculta a pasta para o cliente não apagar sem querer
+    Set-ItemProperty -Path $TechPath -Name Attributes -Value "Hidden" -ErrorAction SilentlyContinue
+
+    Write-Host ">> Injetando Otimizações Visuais e de Performance..." -ForegroundColor Cyan
     $RegTweaks = @"
 Windows Registry Editor Version 5.00
 
-; Extensões de Arquivos e Menu Clássico Win11
+; INFORMAÇÕES DO TÉCNICO (OEM)
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation]
+"Manufacturer"="MEU TECNICO ONLINE - Renan Portes"
+"SupportPhone"="(44) 98827-9740"
+"SupportURL"="https://wa.me/5544988279740"
+"Logo"="C:\\meutecnico\\logo-win.bmp"
+
+; ÍCONES NA ÁREA DE TRABALHO E EXPLORADOR
+; Meu Computador e Pasta do Usuário na Área de Trabalho
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel]
+"{20D04FE0-3AEA-1069-A2D8-08002B30309D}"=dword:00000000
+"{59031a47-3f72-44a7-89c5-5595fe6b30ee}"=dword:00000000
+
+; Abrir Explorador de Arquivos em "Este Computador"
 [HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"LaunchTo"=dword:00000001
 "HideFileExt"=dword:00000000
+
+; Restaurar Menu de Contexto Clássico (Win11)
 [HKEY_CURRENT_USER\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32]
 @=""
 
+; LIMPEZA DA BARRA DE TAREFAS E MENU INICIAR
+; Desativar Cortana, Visão de Tarefas, Chat e Meet Now
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"ShowCortanaButton"=dword:00000000
+"ShowTaskViewButton"=dword:00000000
+"TaskbarMn"=dword:00000000
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer]
+"HideSCAMeetNow"=dword:00000001
+
+; Reduzir caixa de pesquisa para apenas o ícone
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Search]
+"SearchboxTaskbarMode"=dword:00000001
+
+; Desativar pesquisa na Web (menu Iniciar mais rápido)
+[HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\Explorer]
+"DisableSearchBoxSuggestions"=dword:00000001
+
+; PERFORMANCE E SISTEMA
 ; Game Mode e Hardware GPU Scheduling
 [HKEY_CURRENT_USER\Software\Microsoft\GameBar]
 "AutoGameModeEnabled"=dword:00000001
 [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\GraphicsDrivers]
 "HwSchMode"=dword:00000002
 
-; Desativar Power Throttling e Otimizar Responsividade
+; Desativar Power Throttling e Otimizar Responsividade (Win32PrioritySeparation)
 [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling]
 "PowerThrottlingOff"=dword:00000001
 [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\PriorityControl]
 "Win32PrioritySeparation"=dword:00000026
 
-; Desativar Telemetria e Pesquisa na Web
+; Desativar Telemetria Básica
 [HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\DataCollection]
 "AllowTelemetry"=dword:00000000
-[HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\Explorer]
-"DisableSearchBoxSuggestions"=dword:00000001
 
-; Desativar Copilot e Widgets
+; Desativar Copilot e Widgets (Notícias e Interesses)
 [HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot]
 "TurnOffWindowsCopilot"=dword:00000001
 [HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\WindowsCopilot]
 "TurnOffWindowsCopilot"=dword:00000001
 [HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Dsh] 
 "AllowNewsAndInterests"=dword:00000000
+
+; CORREÇÕES (FIX)
+; Correção de erro de Impressora de Rede
+[HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Print]
+"RpcAuthnLevelPrivacyEnabled"=dword:00000001
+
+; Correção da barra de pesquisa não digitar (ctfmon)
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Run]
+"ctfmon"="C:\\Windows\\System32\\ctfmon.exe"
 "@
 
     $RegPath = "$env:TEMP\OtimizacaoRenan.reg"
     Set-Content -Path $RegPath -Value $RegTweaks -Force
     Start-Process -wait "regedit.exe" -ArgumentList "/s `"$RegPath`"" -WindowStyle Hidden
     
-    Write-Host " Reiniciando o Explorer para aplicar efeitos visuais..." -ForegroundColor Cyan
+    Write-Host ">> Reiniciando o Explorer para aplicar efeitos visuais..." -ForegroundColor Cyan
     Stop-Process -Name explorer -Force
     Remove-Item $RegPath -Force -ErrorAction SilentlyContinue
 
-    Write-Host "`n[+] Registro otimizado com sucesso!" -ForegroundColor Green
+    Write-Host "`n[+] Sistema otimizado e Marca do Técnico registrada!" -ForegroundColor Green
     Pause
 }
 
