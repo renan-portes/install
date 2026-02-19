@@ -10,7 +10,7 @@
     </Product>
   </Add>
   
-  <Display Level="None" AcceptEULA="TRUE" />
+  <Display Level="Full" AcceptEULA="TRUE" />
   
   <Property Name="SharedComputerLicensing" Value="0" />
   <Property Name="FORCEAPPSHUTDOWN" Value="FALSE" />
