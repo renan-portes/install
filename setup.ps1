@@ -489,8 +489,16 @@ function Instalar-Office {
     Clear-Host
     Write-Host "[-] Preparando instalação do Office..." -ForegroundColor Yellow
     
+    # 1. MATAR PROCESSOS TRAVADOS (Resolve o erro de "Já está instalado")
+    $processos = Get-Process "setup", "OfficeClickToRun" -ErrorAction SilentlyContinue
+    if ($processos) {
+        Write-Host " Limpando processos travados de tentativas anteriores..." -ForegroundColor Cyan
+        $processos | Stop-Process -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 2
+    }
+    
     $OfficeTemp = "C:\OfficeTemp"
-    if (Test-Path $OfficeTemp) { Remove-Item $OfficeTemp -Recurse -Force }
+    if (Test-Path $OfficeTemp) { Remove-Item $OfficeTemp -Recurse -Force -ErrorAction SilentlyContinue }
     New-Item -ItemType Directory -Force -Path $OfficeTemp | Out-Null
     
     Write-Host " Baixando instalador e configuração do GitHub..." -ForegroundColor Cyan
@@ -499,19 +507,29 @@ function Instalar-Office {
 
     if (Test-Path "$OfficeTemp\setup.exe") {
         Write-Host " Iniciando instalador da Microsoft..." -ForegroundColor Cyan
-        Start-Process -wait "$OfficeTemp\setup.exe" -ArgumentList "/configure $OfficeTemp\config.xml"
-        Write-Host "`n[+] Office Instalado!" -ForegroundColor Green
+        
+        # Inicia o instalador
+        Start-Process "$OfficeTemp\setup.exe" -ArgumentList "/configure `"$OfficeTemp\config.xml`""
+        
+        # 2. O PULO DO GATO: Esperar o processo real terminar!
+        Write-Host " Aguardando a finalização da instalação (Isso pode levar alguns minutos)..." -ForegroundColor Yellow
+        Start-Sleep -Seconds 5 # Dá tempo do processo nascer no Windows
+        
+        while (Get-Process "OfficeClickToRun" -ErrorAction SilentlyContinue) {
+            Start-Sleep -Seconds 5 # O script fica em loop pausado aqui até o Office terminar de verdade
+        }
+        
+        Write-Host "`n[+] Office Instalado com sucesso!" -ForegroundColor Green
         
         Write-Host " Criando atalhos na Área de Trabalho..." -ForegroundColor Cyan
         $Desktop = [Environment]::GetFolderPath("Desktop")
-        # Caminho padrão onde o Office joga os atalhos para todos os usuários
         $CommonStartMenu = "C:\ProgramData\Microsoft\Windows\Start Menu\Programs"
-        
-        # Lista dos atalhos que queremos puxar
         $Atalhos = @("Word.lnk", "Excel.lnk", "PowerPoint.lnk", "Access.lnk")
         
         foreach ($Atalho in $Atalhos) {
-            Copy-Item "$CommonStartMenu\$Atalho" -Destination $Desktop -ErrorAction SilentlyContinue
+            if (Test-Path "$CommonStartMenu\$Atalho") {
+                Copy-Item "$CommonStartMenu\$Atalho" -Destination $Desktop -ErrorAction SilentlyContinue
+            }
         }
         Write-Host " [OK] Atalhos criados com sucesso!" -ForegroundColor Green
 
@@ -519,6 +537,7 @@ function Instalar-Office {
         Write-Host "`n[!] ERRO: setup.exe não encontrado no seu GitHub." -ForegroundColor Red
     }
     
+    # Só apaga a pasta quando tem certeza absoluta que terminou
     Remove-Item -Path $OfficeTemp -Recurse -Force -ErrorAction SilentlyContinue
     Pause
 }
