@@ -153,17 +153,27 @@ function Menu-Utilidades {
                 Write-Host " [OK] Notepad++ Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
             }
             '6' { 
-                Write-Host "`n>> Instalando Adobe Reader..." -ForegroundColor Cyan
-                # Download normal, sem o truque de Referer
-                Get-FileFromWeb -URL "https://admdownload.adobe.com/bin/live/readerdc_pt_br_xa_crd_install.exe" -File "$env:TEMP\AdobeReader.exe"
-                # Comando silencioso simplificado
-                Start-Process -wait "$env:TEMP\AdobeReader.exe" -ArgumentList "/sAll"
+                Write-Host "`n>> Baixando Adobe Reader..." -ForegroundColor Cyan
+                $adobeUrl = "https://admdownload.adobe.com/bin/live/readerdc_pt_br_xa_crd_install.exe"
+                $adobePath = "$env:TEMP\AdobeReader.exe"
+                
+                # Usando o baixador nativo do Windows (sem camuflagem) para a Adobe não bloquear
+                Invoke-WebRequest -Uri $adobeUrl -OutFile $adobePath -UseBasicParsing
+                
+                Write-Host ">> Instalando silenciosamente..." -ForegroundColor Cyan
+                # Argumentos oficias da Adobe para instalação 100% invisível
+                Start-Process -wait $adobePath -ArgumentList "/sAll /rs /msi EULA_ACCEPT=YES"
+                
                 Write-Host " [OK] Adobe Reader Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
             }
             '7' { 
                 Write-Host "`n>> Instalando SumatraPDF..." -ForegroundColor Cyan
-                Get-FileFromWeb -URL "https://sumatrapdfreader.org/dl/SumatraPDF-3.5.2-64-install.exe" -File "$env:TEMP\SumatraPDF.exe"
-                Start-Process -wait "$env:TEMP\SumatraPDF.exe" -ArgumentList "/S"
+                # Usando o link do GitHub (estável e sem bloqueios)
+                Get-FileFromWeb -URL "https://github.com/sumatrapdfreader/sumatrapdf/releases/download/3.5.2/SumatraPDF-3.5.2-64-install.exe" -File "$env:TEMP\SumatraPDF.exe"
+                
+                # O comando silencioso correto do Sumatra é -s (minúsculo)
+                Start-Process -wait "$env:TEMP\SumatraPDF.exe" -ArgumentList "-s"
+                
                 Write-Host " [OK] SumatraPDF Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
             }
             '0' { return }
