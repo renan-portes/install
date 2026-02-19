@@ -421,6 +421,20 @@ function Instalar-Office {
         Write-Host " Iniciando instalador da Microsoft..." -ForegroundColor Cyan
         Start-Process -wait "$OfficeTemp\setup.exe" -ArgumentList "/configure $OfficeTemp\config.xml"
         Write-Host "`n[+] Office Instalado!" -ForegroundColor Green
+        
+        Write-Host " Criando atalhos na Área de Trabalho..." -ForegroundColor Cyan
+        $Desktop = [Environment]::GetFolderPath("Desktop")
+        # Caminho padrão onde o Office joga os atalhos para todos os usuários
+        $CommonStartMenu = "C:\ProgramData\Microsoft\Windows\Start Menu\Programs"
+        
+        # Lista dos atalhos que queremos puxar
+        $Atalhos = @("Word.lnk", "Excel.lnk", "PowerPoint.lnk", "Access.lnk")
+        
+        foreach ($Atalho in $Atalhos) {
+            Copy-Item "$CommonStartMenu\$Atalho" -Destination $Desktop -ErrorAction SilentlyContinue
+        }
+        Write-Host " [OK] Atalhos criados com sucesso!" -ForegroundColor Green
+
     } else {
         Write-Host "`n[!] ERRO: setup.exe não encontrado no seu GitHub." -ForegroundColor Red
     }
