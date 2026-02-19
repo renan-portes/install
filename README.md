@@ -27,8 +27,8 @@ irm bit.ly/renan-tool | iex
 
 Nossa ferramenta foi reescrita com um motor de download direto e interface por submenus, garantindo instalações 100% silenciosas e sem dependência da Microsoft Store.
 <br>
+<br>
 📦 Instalação Modular de Softwares
-
 Baixa os executáveis oficiais em tempo real com barra de progresso visual.
 
     Navegadores: Google Chrome, Mozilla Firefox, Brave Browser.
