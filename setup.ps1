@@ -154,9 +154,10 @@ function Menu-Utilidades {
             }
             '6' { 
                 Write-Host "`n>> Instalando Adobe Reader..." -ForegroundColor Cyan
-                $adobeUrl = "https://admdownload.adobe.com/bin/live/readerdc_pt_br_xa_crd_install.exe"
-                Get-FileFromWeb -URL $adobeUrl -File "$env:TEMP\reader_install.exe" -Referer "https://get.adobe.com/br/reader/"
-                Start-Process -wait "$env:TEMP\reader_install.exe" -ArgumentList "/sAll /rs /msi EULA_ACCEPT=YES"
+                # Download normal, sem o truque de Referer
+                Get-FileFromWeb -URL "https://admdownload.adobe.com/bin/live/readerdc_pt_br_xa_crd_install.exe" -File "$env:TEMP\AdobeReader.exe"
+                # Comando silencioso simplificado
+                Start-Process -wait "$env:TEMP\AdobeReader.exe" -ArgumentList "/sAll"
                 Write-Host " [OK] Adobe Reader Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
             }
             '7' { 
