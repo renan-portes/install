@@ -93,10 +93,31 @@ function Menu-Navegadores {
                 Write-Host " [OK] Firefox Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
             }
              '3' { 
-                Write-Host "`n>> Instalando Brave..." -ForegroundColor Cyan
-                Get-FileFromWeb -URL "https://laptop-updates.brave.com/latest/winx64/BraveBrowserSetup.exe" -File "$env:TEMP\Brave.exe"
-                Start-Process -wait "$env:TEMP\Chrome.msi" -ArgumentList "/quiet"
-                Write-Host " [OK] Brave Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
+                Write-Host "`n>> Preparando a instalação do Brave..." -ForegroundColor Cyan
+                
+                # Limpeza preventiva para derrubar instalações velhas travadas (Evita o erro do robozinho)
+                Get-Process "Brave*", "setup", "braveupdate" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+                
+                # O link "latest/download" do GitHub sempre puxa a versão mais atualizada automaticamente!
+                # Estamos puxando a versão "SilentSetup" que não precisa de comandos para ficar invisível.
+                $BraveUrl = "https://github.com/brave/brave-browser/releases/latest/download/BraveBrowserStandaloneSilentSetup.exe"
+                $BravePath = "$env:TEMP\BraveSilent.exe"
+                
+                if (Test-Path $BravePath) { Remove-Item $BravePath -Force -ErrorAction SilentlyContinue }
+                
+                Write-Host ">> Baixando a última versão (Instalador Offline Silencioso)..." -ForegroundColor Cyan
+                Get-FileFromWeb -URL $BraveUrl -File $BravePath
+                
+                if (Test-Path $BravePath) {
+                    Write-Host ">> Instalando em segundo plano..." -ForegroundColor Cyan
+                    
+                    # Como o instalador já é silencioso de fábrica, rodamos ele limpo e apenas mandamos o PowerShell esperar (-wait)
+                    Start-Process -wait $BravePath
+                    
+                    Write-Host " [OK] Brave Instalado com sucesso!" -ForegroundColor Green; Start-Sleep -Seconds 2
+                } else {
+                    Write-Host " [!] Erro ao baixar o instalador do GitHub!" -ForegroundColor Red; Start-Sleep -Seconds 2
+                }
             }
             '0' { return }
             default { Write-Host " Opção Inválida!" -ForegroundColor Red; Start-Sleep -Seconds 1 }
