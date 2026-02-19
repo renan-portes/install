@@ -23,24 +23,38 @@ irm bit.ly/renan-tool | iex
 <br>
 ---
 
-## 📋 Funcionalidades
+📋 Funcionalidades em Destaque
 
-| 📦 Instalação de Softwares | ⚡ Otimização do Sistema |
-| :--- | :--- |
-| **Winget Automático:** Instala Chrome, WinRAR, AnyDesk e Adobe Reader sempre na versão mais recente. | **Registro:** Ajustes de performance, visual e privacidade. |
-| **Office 2024:** Download oficial e ativação automática via script (MAS). | **Energia:** Importação de plano de energia de alta performance. |
+Nossa ferramenta foi reescrita com um motor de download direto e interface por submenus, garantindo instalações 100% silenciosas e sem dependência da Microsoft Store.
+📦 Instalação Modular de Softwares
 
-<br>
+Baixa os executáveis oficiais em tempo real com barra de progresso visual.
 
-## 📂 Estrutura do Repositório
+    Navegadores: Google Chrome, Mozilla Firefox, Brave Browser.
 
-* `setup.ps1` - **Script Principal:** Gerencia o menu e downloads.
-* `config.xml` - **Office Config:** Define a instalação do Office ProPlus Volume.
-* `Registry.reg` - **Tweaks:** Chaves de registro do Windows.
-* `Power.pow` - **Performance:** Plano de energia personalizado.
-* `logo-win.bmp` - **Branding:** Logo exibida nas Propriedades do Sistema.
+    Utilidades: WinRAR, 7-Zip, AnyDesk, Discord, Notepad++, Adobe Reader, SumatraPDF.
 
----
+    Launchers de Jogos: Steam, Epic Games, Battle.net, EA App, Ubisoft Connect, GOG Galaxy, Valorant.
+
+    Dependências: Visual C++ Redistributables (Pacote AIO Completo) e DirectX Runtimes.
+
+⚡ Otimização de Alta Performance (Foco em Games)
+
+    Plano de Energia: Importação automática do perfil Bitsum Highest Performance (Process Lasso) com Core Parking desativado e Hibernação desligada.
+
+    Sistema: Ativação do Game Mode, Hardware Accelerated GPU Scheduling (HAGS) e desativação do Power Throttling.
+
+🛡️ Privacidade e Qualidade de Vida (QoL)
+
+    Registro (Tweaks): Restaura o menu de contexto clássico no Windows 11, desativa Telemetria, remove Copilot/Widgets e corrige bug de pesquisa do ctfmon.
+
+    OEM Branding: Injeta automaticamente a logo e os dados de suporte nas configurações de Sistema do Windows do cliente.
+
+📄 Produtividade
+
+    Office 2024: Download e instalação Zero-Click (100% oculta em segundo plano) com criação automática de atalhos na Área de Trabalho.
+
+    Ativação: Integração direta com Microsoft Activation Scripts (MAS) para Windows e Office.
 
 <div align="center">
 
