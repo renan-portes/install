@@ -95,25 +95,26 @@ function Menu-Navegadores {
             '3' { 
                 Write-Host "`n>> Preparando a instalação do Brave..." -ForegroundColor Cyan
                 
-                # 1. Mata qualquer instalador do Brave que ficou travado no fundo
+                # Derruba qualquer tentativa anterior que tenha ficado travada na memória
                 Get-Process "Brave*", "setup" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
                 Start-Sleep -Seconds 1
                 
-                Write-Host ">> Baixando Brave Browser (Instalador Offline)..." -ForegroundColor Cyan
-                
-                # 2. Usa um nome de arquivo NOVO para evitar o erro de bloqueio
-                $BravePath = "$env:TEMP\Brave_Offline.exe"
+                Write-Host ">> Baixando versão Enterprise (100% Silenciosa)..." -ForegroundColor Cyan
+                $BravePath = "$env:TEMP\Brave_Silent.exe"
                 if (Test-Path $BravePath) { Remove-Item $BravePath -Force -ErrorAction SilentlyContinue }
                 
-                # Baixa a versão Standalone direto do GitHub
-                Get-FileFromWeb -URL "https://github.com/brave/brave-browser/releases/latest/download/BraveBrowserStandaloneSetup.exe" -File $BravePath
+                # O segredo: Usar o executável "SilentSetup" oficial da Brave para evitar o erro 0x80040c01
+                Get-FileFromWeb -URL "https://github.com/brave/brave-browser/releases/latest/download/BraveBrowserStandaloneSilentSetup.exe" -File $BravePath
                 
                 if (Test-Path $BravePath) {
-                    Write-Host ">> Instalando silenciosamente..." -ForegroundColor Cyan
-                    Start-Process -wait $BravePath -ArgumentList "--silent --install"
+                    Write-Host ">> Instalando em segundo plano..." -ForegroundColor Cyan
+                    
+                    # Como o EXE já é a versão silenciosa de fábrica, rodamos ele limpo e sem parâmetros!
+                    Start-Process -wait $BravePath
+                    
                     Write-Host " [OK] Brave Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
                 } else {
-                    Write-Host " [!] Erro ao baixar o Brave!" -ForegroundColor Red; Start-Sleep -Seconds 2
+                    Write-Host " [!] Erro ao baixar o instalador!" -ForegroundColor Red; Start-Sleep -Seconds 2
                 }
             }
             '0' { return }
