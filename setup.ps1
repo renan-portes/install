@@ -189,18 +189,28 @@ function Menu-Utilidades {
                 Write-Host " [OK] Notepad++ Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
             }
             '6' { 
-                Write-Host "`n>> Baixando Adobe Reader..." -ForegroundColor Cyan
-                $adobeUrl = "https://admdownload.adobe.com/bin/live/readerdc_pt_br_xa_crd_install.exe"
-                $adobePath = "$env:TEMP\AdobeReader.exe"
+                Write-Host "`n>> Preparando a instalação do Adobe Reader..." -ForegroundColor Cyan
                 
-                # Usando o baixador nativo do Windows (sem camuflagem) para a Adobe não bloquear
-                Invoke-WebRequest -Uri $adobeUrl -OutFile $adobePath -UseBasicParsing
+                # Link direto oficial do servidor Enterprise da Adobe (Instalador Offline x64 PT-BR)
+                # Sendo a versão offline completa, não precisa de baixar pacotes extra e não dá erro de inicialização.
+                $AdobeUrl = "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/2400320112/AcroRdrDCx642400320112_pt_BR.exe"
+                $AdobePath = "$env:TEMP\AdobeReaderOffline.exe"
                 
-                Write-Host ">> Instalando silenciosamente..." -ForegroundColor Cyan
-                # Argumentos oficias da Adobe para instalação 100% invisível
-                Start-Process -wait $adobePath -ArgumentList "/sAll /rs /msi EULA_ACCEPT=YES"
+                if (Test-Path $AdobePath) { Remove-Item $AdobePath -Force -ErrorAction SilentlyContinue }
                 
-                Write-Host " [OK] Adobe Reader Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
+                Write-Host ">> Baixando o instalador completo (Aguarde, o arquivo tem aprox. 300MB)..." -ForegroundColor Yellow
+                Get-FileFromWeb -URL $AdobeUrl -File $AdobePath
+                
+                if (Test-Path $AdobePath) {
+                    Write-Host ">> Executando instalação 100% silenciosa..." -ForegroundColor Cyan
+                    
+                    # Argumentos oficiais da Adobe para o arquivo Offline instalar sem piscar na tela
+                    Start-Process -wait $AdobePath -ArgumentList "/sAll /rs /msi EULA_ACCEPT=YES"
+                    
+                    Write-Host " [OK] Adobe Reader Instalado com sucesso!" -ForegroundColor Green; Start-Sleep -Seconds 2
+                } else {
+                    Write-Host " [!] Erro ao baixar o Adobe Reader!" -ForegroundColor Red; Start-Sleep -Seconds 2
+                }
             }
             '7' { 
                 Write-Host "`n>> Instalando SumatraPDF..." -ForegroundColor Cyan
