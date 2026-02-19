@@ -5,14 +5,28 @@
 # ============================================================================
 #Requires -RunAsAdministrator
 
+# --- CONFIGURAÇÕES GLOBAIS ---
 $Host.UI.RawUI.WindowTitle = "WIN-TOOLKIT - MEU TÉCNICO ONLINE"
+$Host.UI.RawUI.BackgroundColor = "Black"
+$Host.PrivateData.ProgressBackgroundColor = "Black"
+$Host.PrivateData.ProgressForegroundColor = "White"
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-# --- FUNÇÃO GLOBAL DE DOWNLOAD COM BARRA DE PROGRESSO ---
+# Troque isso para o repositório onde estão seus arquivos do Office (setup.exe e config.xml)
+$RepoURL = "https://raw.githubusercontent.com/renan-portes/install/main"
+
+# ============================================================================
+# 0. FUNÇÃO GLOBAL DE DOWNLOAD (Motor)
+# ============================================================================
 function Get-FileFromWeb {
-    param ([Parameter(Mandatory)][string]$URL, [Parameter(Mandatory)][string]$File)
+    param (
+        [Parameter(Mandatory)][string]$URL, 
+        [Parameter(Mandatory)][string]$File,
+        [string]$Referer = ""
+    )
     
     function Show-Progress {
-        param ([Parameter(Mandatory)][Single]$TotalValue, [Parameter(Mandatory)][Single]$CurrentValue, [Parameter(Mandatory)][string]$ProgressText, [Parameter()][int]$BarSize = 10)
+        param ([Parameter(Mandatory)][Single]$TotalValue, [Parameter(Mandatory)][Single]$CurrentValue, [Parameter(Mandatory)][string]$ProgressText, [Parameter()][int]$BarSize = 20)
         $percent = $CurrentValue / $TotalValue
         $percentComplete = $percent * 100
         Write-Host -NoNewLine "`r$ProgressText $(''.PadRight($BarSize * $percent, [char]9608).PadRight($BarSize, [char]9617)) $($percentComplete.ToString('##0.00').PadLeft(6)) % "
@@ -20,6 +34,9 @@ function Get-FileFromWeb {
 
     try {
         $request = [System.Net.HttpWebRequest]::Create($URL)
+        $request.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        if ($Referer -ne "") { $request.Referer = $Referer }
+
         $response = $request.GetResponse()
         
         $fileDirectory = $([System.IO.Path]::GetDirectoryName($File))
@@ -35,7 +52,7 @@ function Get-FileFromWeb {
             $count = $reader.Read($buffer, 0, $buffer.Length)
             $writer.Write($buffer, 0, $count)
             $total += $count
-            if ($fullSize -gt 0) { Show-Progress -TotalValue $fullSize -CurrentValue $total -ProgressText " Baixando $($File.Name):" -BarSize 20 }
+            if ($fullSize -gt 0) { Show-Progress -TotalValue $fullSize -CurrentValue $total -ProgressText " Baixando $($File.Name):" }
         } while ($count -gt 0)
         Write-Host "" 
     }
@@ -46,8 +63,102 @@ function Get-FileFromWeb {
 }
 
 # ============================================================================
-# 1. SUBMENU: INSTALADOR DE PROGRAMAS / LAUNCHERS / DEPENDÊNCIAS
+# 1. MÓDULOS DE INSTALAÇÃO (Submenus)
 # ============================================================================
+
+function Instalar-Navegadores {
+    Clear-Host
+    Write-Host "[-] Instalando Navegadores..." -ForegroundColor Yellow
+
+    Write-Host "`n>> Google Chrome" -ForegroundColor Cyan
+    Get-FileFromWeb -URL "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi" -File "$env:TEMP\Chrome.msi"
+    Start-Process -wait "$env:TEMP\Chrome.msi" -ArgumentList "/quiet"
+    
+    Write-Host "`n>> Mozilla Firefox" -ForegroundColor Cyan
+    Get-FileFromWeb -URL "https://download.mozilla.org/?product=firefox-latest-ssl&os=win64&lang=pt-BR" -File "$env:TEMP\Firefox.exe"
+    Start-Process -wait "$env:TEMP\Firefox.exe" -ArgumentList "/S" -WindowStyle Hidden
+    
+    Write-Host "`n>> Brave Browser" -ForegroundColor Cyan
+    Get-FileFromWeb -URL "https://laptop-updates.brave.com/latest/winx64" -File "$env:TEMP\Brave.exe"
+    Start-Process -wait "$env:TEMP\Brave.exe" -ArgumentList "--silent --install" -WindowStyle Hidden
+
+    Write-Host "`n[+] Navegadores instalados com sucesso!" -ForegroundColor Green
+    Pause
+}
+
+function Instalar-Utilidades {
+    Clear-Host
+    Write-Host "[-] Instalando Utilidades..." -ForegroundColor Yellow
+
+    Write-Host "`n>> WinRAR (PT-BR)" -ForegroundColor Cyan
+    Get-FileFromWeb -URL "https://www.win-rar.com/fileadmin/winrar-versions/winrar/winrar-x64-701br.exe" -File "$env:TEMP\winrar.exe"
+    Start-Process -wait "$env:TEMP\winrar.exe" -ArgumentList "/S"
+
+    Write-Host "`n>> AnyDesk" -ForegroundColor Cyan
+    Get-FileFromWeb -URL "https://download.anydesk.com/AnyDesk.exe" -File "$env:TEMP\AnyDesk.exe"
+    Start-Process -wait "$env:TEMP\AnyDesk.exe" -ArgumentList "--install `"$env:ProgramFiles(x86)\AnyDesk`" --start-with-win --silent"
+
+    Write-Host "`n>> Notepad++" -ForegroundColor Cyan
+    Get-FileFromWeb -URL "https://github.com/FR33THYFR33THY/files/raw/main/Notepad%20++.exe" -File "$env:TEMP\Notepad++.exe"
+    Start-Process -wait "$env:TEMP\Notepad++.exe" -ArgumentList "/S"
+
+    Write-Host "`n>> Adobe Reader" -ForegroundColor Cyan
+    $adobeUrl = "https://admdownload.adobe.com/bin/live/readerdc_pt_br_xa_crd_install.exe"
+    # Driblando o bloqueio da Adobe com o Referer falso
+    Get-FileFromWeb -URL $adobeUrl -File "$env:TEMP\reader_install.exe" -Referer "https://get.adobe.com/br/reader/"
+    Start-Process -wait "$env:TEMP\reader_install.exe" -ArgumentList "/sAll /rs /msi EULA_ACCEPT=YES"
+
+    Write-Host "`n[+] Utilidades instaladas com sucesso!" -ForegroundColor Green
+    Pause
+}
+
+function Instalar-Launchers {
+    Clear-Host
+    Write-Host "[-] Instalando Launchers de Jogos..." -ForegroundColor Yellow
+    
+    Write-Host "`n>> Steam" -ForegroundColor Cyan
+    Get-FileFromWeb -URL "https://cdn.cloudflare.steamstatic.com/client/installer/SteamSetup.exe" -File "$env:TEMP\Steam.exe"
+    Start-Process -wait "$env:TEMP\Steam.exe" -ArgumentList "/S"
+
+    Write-Host "`n>> Epic Games" -ForegroundColor Cyan
+    Get-FileFromWeb -URL "https://epicgames-download1.akamaized.net/Builds/UnrealEngineLauncher/Installers/Win32/EpicInstaller-15.17.1.msi?launcherfilename=EpicInstaller-15.17.1.msi" -File "$env:TEMP\Epic.msi"
+    Start-Process -wait "$env:TEMP\Epic.msi" -ArgumentList "/quiet"
+
+    Write-Host "`n>> Discord" -ForegroundColor Cyan
+    Get-FileFromWeb -URL "https://dl.discordapp.net/distro/app/stable/win/x86/1.0.9036/DiscordSetup.exe" -File "$env:TEMP\Discord.exe"
+    Start-Process -wait "$env:TEMP\Discord.exe" -ArgumentList "/s"
+
+    Write-Host "`n>> Battle.net" -ForegroundColor Cyan
+    Get-FileFromWeb -URL "https://downloader.battle.net/download/getInstaller?os=win&installer=Battle.net-Setup.exe" -File "$env:TEMP\Battle.net.exe"
+    Start-Process -wait "$env:TEMP\Battle.net.exe" -ArgumentList '--lang=ptBR --installpath="C:\Program Files (x86)\Battle.net"'
+
+    Write-Host "`n>> Valorant / Riot" -ForegroundColor Cyan
+    Get-FileFromWeb -URL "https://valorant.secure.dyn.riotcdn.net/channels/public/x/installer/current/live.live.ap.exe" -File "$env:TEMP\Valorant.exe"
+    Start-Process -wait "$env:TEMP\Valorant.exe"
+
+    Write-Host "`n[+] Launchers baixados e instalados!" -ForegroundColor Green
+    Pause
+}
+
+function Instalar-Dependencias {
+    Clear-Host
+    Write-Host "[-] Instalando C++ e DirectX (Otimizado)..." -ForegroundColor Yellow
+
+    Write-Host "`n>> Visual C++ Redistributables (AIO)" -ForegroundColor Cyan
+    $cppPath = "$env:TEMP\VCRedist_AIO.exe"
+    Get-FileFromWeb -URL "https://github.com/abbodi1406/vcredist/releases/latest/download/VisualCppRedist_AIO_x86_x64.exe" -File $cppPath
+    Start-Process -wait $cppPath -ArgumentList "/ai" -WindowStyle Hidden
+    
+    Write-Host "`n>> DirectX Runtimes (Web Setup)" -ForegroundColor Cyan
+    $dxPath = "$env:TEMP\dxwebsetup.exe"
+    Get-FileFromWeb -URL "https://download.microsoft.com/download/1/7/1/1718CCC4-6315-4D8E-9543-8E28A4E18C4C/dxwebsetup.exe" -File $dxPath
+    Start-Process -wait $dxPath -ArgumentList "/Q" -WindowStyle Hidden
+
+    Remove-Item $cppPath, $dxPath -Force -ErrorAction SilentlyContinue
+    Write-Host "`n[+] Dependências base instaladas com sucesso!" -ForegroundColor Green
+    Pause
+}
+
 function Menu-Instalador {
     do {
         Clear-Host
@@ -57,68 +168,161 @@ function Menu-Instalador {
         Write-Host ""
         Write-Host " [1] Navegadores (Chrome, Brave, Firefox)"
         Write-Host " [2] Utilidades (WinRAR, AnyDesk, Adobe Reader, Notepad++)"
-        Write-Host " [3] Launchers de Jogos (Steam, Epic, Riot, etc.)"
+        Write-Host " [3] Launchers de Jogos (Steam, Epic, Battle.net, Discord, Riot)"
         Write-Host " [4] Dependências (C++ All-in-One e DirectX)"
         Write-Host " [0] VOLTAR AO MENU PRINCIPAL"
         Write-Host ""
         
         $subEscolha = Read-Host " Escolha uma categoria"
-
         switch ($subEscolha) {
-            '1' { Write-Host "Instalando Navegadores..."; Pause } # Vamos rechear aqui
-            '2' { Write-Host "Instalando Utilidades..."; Pause }  # Vamos rechear aqui
-            '3' { Write-Host "Instalando Launchers..."; Pause }   # Vamos rechear aqui
-            '4' { Write-Host "Instalando C++ e DirectX..."; Pause } # Aquela nossa função otimizada
-            '0' { return } # O 'return' sai desse submenu e volta pra tela inicial
+            '1' { Instalar-Navegadores }
+            '2' { Instalar-Utilidades }
+            '3' { Instalar-Launchers }
+            '4' { Instalar-Dependencias }
+            '0' { return }
             default { Write-Host " Opção Inválida!" -ForegroundColor Red; Start-Sleep -Seconds 1 }
         }
     } while ($true)
 }
 
 # ============================================================================
-# 2 A 5. FUNÇÕES PRINCIPAIS DE OTIMIZAÇÃO E SISTEMA
+# 2. OTIMIZAÇÕES DE REGISTRO
 # ============================================================================
-
 function Aplicar-Regedit {
     Clear-Host
-    Write-Host "[-] Aplicando Otimizações de Registro..." -ForegroundColor Yellow
-    # Aqui vamos colar o código filtrado da aba "Optimize" do arquivo 12 Registry.ps1
+    Write-Host "[-] Aplicando Otimizações de Registro (Performance e Privacidade)..." -ForegroundColor Yellow
+    
+    $RegTweaks = @"
+Windows Registry Editor Version 5.00
+
+; Extensões de Arquivos e Menu Clássico Win11
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+"HideFileExt"=dword:00000000
+[HKEY_CURRENT_USER\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32]
+@=""
+
+; Game Mode e Hardware GPU Scheduling
+[HKEY_CURRENT_USER\Software\Microsoft\GameBar]
+"AutoGameModeEnabled"=dword:00000001
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\GraphicsDrivers]
+"HwSchMode"=dword:00000002
+
+; Desativar Power Throttling e Otimizar Responsividade
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling]
+"PowerThrottlingOff"=dword:00000001
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\PriorityControl]
+"Win32PrioritySeparation"=dword:00000026
+
+; Desativar Telemetria e Pesquisa na Web
+[HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\DataCollection]
+"AllowTelemetry"=dword:00000000
+[HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\Explorer]
+"DisableSearchBoxSuggestions"=dword:00000001
+
+; Desativar Copilot e Widgets
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot]
+"TurnOffWindowsCopilot"=dword:00000001
+[HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\WindowsCopilot]
+"TurnOffWindowsCopilot"=dword:00000001
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Dsh] 
+"AllowNewsAndInterests"=dword:00000000
+"@
+
+    $RegPath = "$env:TEMP\OtimizacaoRenan.reg"
+    Set-Content -Path $RegPath -Value $RegTweaks -Force
+    Start-Process -wait "regedit.exe" -ArgumentList "/s `"$RegPath`"" -WindowStyle Hidden
+    
+    Write-Host " Reiniciando o Explorer para aplicar efeitos visuais..." -ForegroundColor Cyan
+    Stop-Process -Name explorer -Force
+    Remove-Item $RegPath -Force -ErrorAction SilentlyContinue
+
+    Write-Host "`n[+] Registro otimizado com sucesso!" -ForegroundColor Green
     Pause
 }
 
+# ============================================================================
+# 3. POWER PLAN DE ALTO DESEMPENHO
+# ============================================================================
 function Aplicar-PowerPlan {
     Clear-Host
-    Write-Host "[-] Instalando Ultimate Power Plan..." -ForegroundColor Yellow
-    # Aqui vamos colar a lógica de energia do arquivo 9 Power Plan.ps1
+    Write-Host "[-] Instalando Ultimate Power Plan e Ajustes de Energia..." -ForegroundColor Yellow
+
+    Write-Host "`n Configurando e ativando esquema de energia Ultimate..." -ForegroundColor Cyan
+    cmd /c "powercfg /duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61 99999999-9999-9999-9999-999999999999 >nul 2>&1"
+    cmd /c "powercfg /SETACTIVE 99999999-9999-9999-9999-999999999999 >nul 2>&1"
+
+    Write-Host " Limpando planos antigos e desativando Hibernação..." -ForegroundColor Cyan
+    $output = powercfg /L
+    $powerPlans = @()
+    foreach ($line in $output) {
+        if ($line -match ':') {
+            $parse = $line -split ':'
+            $index = $parse[1].Trim().indexof('(')
+            if ($index -gt 0) {
+                $guid = $parse[1].Trim().Substring(0, $index).Trim()
+                if ($guid -ne "99999999-9999-9999-9999-999999999999") { $powerPlans += $guid }
+            }
+        }
+    }
+    foreach ($plan in $powerPlans) { cmd /c "powercfg /delete $plan >nul 2>&1" }
+    
+    powercfg /hibernate off
+    cmd /c "reg add `"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Power`" /v `"HiberbootEnabled`" /t REG_DWORD /d `"0`" /f >nul 2>&1"
+    cmd /c "reg add `"HKLM\SYSTEM\ControlSet001\Control\Power\PowerSettings\54533251-82be-4824-96c1-47b60b740d00\0cc5b647-c1df-4637-891a-dec35c318583`" /v `"ValueMax`" /t REG_DWORD /d `"100`" /f >nul 2>&1"
+
+    Write-Host "`n[+] Plano de Energia otimizado com sucesso!" -ForegroundColor Green
     Pause
 }
 
+# ============================================================================
+# 4. INSTALAÇÃO DO OFFICE 2024
+# ============================================================================
 function Instalar-Office {
     Clear-Host
-    Write-Host "[-] Iniciando Instalação do Office..." -ForegroundColor Yellow
-    # Instalação do Office 2024
+    Write-Host "[-] Preparando instalação do Office..." -ForegroundColor Yellow
+    
+    $OfficeTemp = "C:\OfficeTemp"
+    if (Test-Path $OfficeTemp) { Remove-Item $OfficeTemp -Recurse -Force }
+    New-Item -ItemType Directory -Force -Path $OfficeTemp | Out-Null
+    
+    Write-Host " Baixando instalador e configuração do GitHub..." -ForegroundColor Cyan
+    Get-FileFromWeb -URL "$RepoURL/setup.exe" -File "$OfficeTemp\setup.exe"
+    Get-FileFromWeb -URL "$RepoURL/config.xml" -File "$OfficeTemp\config.xml"
+
+    if (Test-Path "$OfficeTemp\setup.exe") {
+        Write-Host " Iniciando instalador da Microsoft..." -ForegroundColor Cyan
+        Start-Process -wait "$OfficeTemp\setup.exe" -ArgumentList "/configure $OfficeTemp\config.xml"
+        Write-Host "`n[+] Office Instalado!" -ForegroundColor Green
+    } else {
+        Write-Host "`n[!] ERRO: setup.exe não encontrado no seu GitHub." -ForegroundColor Red
+    }
+    
+    Remove-Item -Path $OfficeTemp -Recurse -Force -ErrorAction SilentlyContinue
     Pause
 }
 
+# ============================================================================
+# 5. ATIVAÇÃO DO SISTEMA
+# ============================================================================
 function Ativar-Sistema {
     Clear-Host
-    Write-Host "[-] Abrindo Ativador (MAS)..." -ForegroundColor Yellow
+    Write-Host "[-] Abrindo Microsoft Activation Scripts (MAS)..." -ForegroundColor Yellow
+    Start-Sleep -Seconds 1
     irm https://get.activated.win | iex
 }
 
 # ============================================================================
-# 6. FUNÇÃO DE CONTATO WHATSAPP
+# 6. CONTATO WHATSAPP
 # ============================================================================
 function Abrir-WhatsApp {
     Clear-Host
     Write-Host "[-] Abrindo WhatsApp de Renan Portes..." -ForegroundColor Green
-    # O link já vai com uma mensagem pré-programada!
     $zapUrl = "https://wa.me/5544988279740?text=Ol%C3%A1%2C%20Renan!%20Estou%20usando%20o%20seu%20Toolkit%20e%20preciso%20de%20suporte."
     Start-Process $zapUrl
 }
 
 # ============================================================================
-# MENU PRINCIPAL (A "Cara" do Script)
+# MENU PRINCIPAL
 # ============================================================================
 function Mostrar-Menu {
     Clear-Host
