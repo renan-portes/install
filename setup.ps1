@@ -63,103 +63,196 @@ function Get-FileFromWeb {
 }
 
 # ============================================================================
-# 1. MÓDULOS DE INSTALAÇÃO (Submenus)
+# 1. MÓDULOS DE INSTALAÇÃO (Submenus Separados)
 # ============================================================================
 
-function Instalar-Navegadores {
-    Clear-Host
-    Write-Host "[-] Instalando Navegadores..." -ForegroundColor Yellow
-
-    Write-Host "`n>> Google Chrome" -ForegroundColor Cyan
-    Get-FileFromWeb -URL "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi" -File "$env:TEMP\Chrome.msi"
-    Start-Process -wait "$env:TEMP\Chrome.msi" -ArgumentList "/quiet"
-    
-    Write-Host "`n>> Mozilla Firefox" -ForegroundColor Cyan
-    Get-FileFromWeb -URL "https://download.mozilla.org/?product=firefox-latest-ssl&os=win64&lang=pt-BR" -File "$env:TEMP\Firefox.exe"
-    Start-Process -wait "$env:TEMP\Firefox.exe" -ArgumentList "/S" -WindowStyle Hidden
-    
-    Write-Host "`n>> Brave Browser" -ForegroundColor Cyan
-    Get-FileFromWeb -URL "https://laptop-updates.brave.com/latest/winx64" -File "$env:TEMP\Brave.exe"
-    Start-Process -wait "$env:TEMP\Brave.exe" -ArgumentList "--silent --install" -WindowStyle Hidden
-
-    Write-Host "`n[+] Navegadores instalados com sucesso!" -ForegroundColor Green
-    Pause
+function Menu-Navegadores {
+    do {
+        Clear-Host
+        Write-Host "==============================================================" -ForegroundColor Yellow
+        Write-Host "                       NAVEGADORES                            " -ForegroundColor White
+        Write-Host "==============================================================" -ForegroundColor Yellow
+        Write-Host " [1] Google Chrome"
+        Write-Host " [2] Mozilla Firefox"
+        Write-Host " [3] Brave Browser"
+        Write-Host " [0] Voltar"
+        Write-Host ""
+        
+        $op = Read-Host " Digite o número do programa"
+        switch ($op) {
+            '1' { 
+                Write-Host "`n>> Instalando Google Chrome..." -ForegroundColor Cyan
+                Get-FileFromWeb -URL "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi" -File "$env:TEMP\Chrome.msi"
+                Start-Process -wait "$env:TEMP\Chrome.msi" -ArgumentList "/quiet"
+                Write-Host " [OK] Google Chrome Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
+            }
+            '2' { 
+                Write-Host "`n>> Instalando Mozilla Firefox..." -ForegroundColor Cyan
+                Get-FileFromWeb -URL "https://download.mozilla.org/?product=firefox-latest-ssl&os=win64&lang=pt-BR" -File "$env:TEMP\Firefox.exe"
+                Start-Process -wait "$env:TEMP\Firefox.exe" -ArgumentList "/S" -WindowStyle Hidden
+                Write-Host " [OK] Firefox Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
+            }
+            '3' { 
+                Write-Host "`n>> Instalando Brave Browser..." -ForegroundColor Cyan
+                Get-FileFromWeb -URL "https://laptop-updates.brave.com/latest/winx64" -File "$env:TEMP\Brave.exe"
+                Start-Process -wait "$env:TEMP\Brave.exe" -ArgumentList "--silent --install" -WindowStyle Hidden
+                Write-Host " [OK] Brave Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
+            }
+            '0' { return }
+            default { Write-Host " Opção Inválida!" -ForegroundColor Red; Start-Sleep -Seconds 1 }
+        }
+    } while ($true)
 }
 
-function Instalar-Utilidades {
-    Clear-Host
-    Write-Host "[-] Instalando Utilidades..." -ForegroundColor Yellow
-
-    Write-Host "`n>> WinRAR (PT-BR)" -ForegroundColor Cyan
-    Get-FileFromWeb -URL "https://www.win-rar.com/fileadmin/winrar-versions/winrar/winrar-x64-701br.exe" -File "$env:TEMP\winrar.exe"
-    Start-Process -wait "$env:TEMP\winrar.exe" -ArgumentList "/S"
-
-    Write-Host "`n>> AnyDesk" -ForegroundColor Cyan
-    Get-FileFromWeb -URL "https://download.anydesk.com/AnyDesk.exe" -File "$env:TEMP\AnyDesk.exe"
-    Start-Process -wait "$env:TEMP\AnyDesk.exe" -ArgumentList "--install `"$env:ProgramFiles(x86)\AnyDesk`" --start-with-win --silent"
-
-    Write-Host "`n>> Notepad++" -ForegroundColor Cyan
-    Get-FileFromWeb -URL "https://github.com/FR33THYFR33THY/files/raw/main/Notepad%20++.exe" -File "$env:TEMP\Notepad++.exe"
-    Start-Process -wait "$env:TEMP\Notepad++.exe" -ArgumentList "/S"
-
-    Write-Host "`n>> Adobe Reader" -ForegroundColor Cyan
-    $adobeUrl = "https://admdownload.adobe.com/bin/live/readerdc_pt_br_xa_crd_install.exe"
-    # Driblando o bloqueio da Adobe com o Referer falso
-    Get-FileFromWeb -URL $adobeUrl -File "$env:TEMP\reader_install.exe" -Referer "https://get.adobe.com/br/reader/"
-    Start-Process -wait "$env:TEMP\reader_install.exe" -ArgumentList "/sAll /rs /msi EULA_ACCEPT=YES"
-
-    Write-Host "`n[+] Utilidades instaladas com sucesso!" -ForegroundColor Green
-    Pause
+function Menu-Utilidades {
+    do {
+        Clear-Host
+        Write-Host "==============================================================" -ForegroundColor Yellow
+        Write-Host "                       UTILIDADES                             " -ForegroundColor White
+        Write-Host "==============================================================" -ForegroundColor Yellow
+        Write-Host " [1] WinRAR (PT-BR)"
+        Write-Host " [2] AnyDesk"
+        Write-Host " [3] Notepad++"
+        Write-Host " [4] Adobe Reader"
+        Write-Host " [0] Voltar"
+        Write-Host ""
+        
+        $op = Read-Host " Digite o número do programa"
+        switch ($op) {
+            '1' { 
+                Write-Host "`n>> Instalando WinRAR..." -ForegroundColor Cyan
+                Get-FileFromWeb -URL "https://www.win-rar.com/fileadmin/winrar-versions/winrar/winrar-x64-701br.exe" -File "$env:TEMP\winrar.exe"
+                Start-Process -wait "$env:TEMP\winrar.exe" -ArgumentList "/S"
+                Write-Host " [OK] WinRAR Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
+            }
+            '2' { 
+                Write-Host "`n>> Instalando AnyDesk..." -ForegroundColor Cyan
+                Get-FileFromWeb -URL "https://download.anydesk.com/AnyDesk.exe" -File "$env:TEMP\AnyDesk.exe"
+                Start-Process -wait "$env:TEMP\AnyDesk.exe" -ArgumentList "--install `"$env:ProgramFiles(x86)\AnyDesk`" --start-with-win --silent"
+                Write-Host " [OK] AnyDesk Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
+            }
+            '3' { 
+                Write-Host "`n>> Instalando Notepad++..." -ForegroundColor Cyan
+                Get-FileFromWeb -URL "https://github.com/FR33THYFR33THY/files/raw/main/Notepad%20++.exe" -File "$env:TEMP\Notepad++.exe"
+                Start-Process -wait "$env:TEMP\Notepad++.exe" -ArgumentList "/S"
+                Write-Host " [OK] Notepad++ Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
+            }
+            '4' { 
+                Write-Host "`n>> Instalando Adobe Reader..." -ForegroundColor Cyan
+                $adobeUrl = "https://admdownload.adobe.com/bin/live/readerdc_pt_br_xa_crd_install.exe"
+                Get-FileFromWeb -URL $adobeUrl -File "$env:TEMP\reader_install.exe" -Referer "https://get.adobe.com/br/reader/"
+                Start-Process -wait "$env:TEMP\reader_install.exe" -ArgumentList "/sAll /rs /msi EULA_ACCEPT=YES"
+                Write-Host " [OK] Adobe Reader Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
+            }
+            '0' { return }
+            default { Write-Host " Opção Inválida!" -ForegroundColor Red; Start-Sleep -Seconds 1 }
+        }
+    } while ($true)
 }
 
-function Instalar-Launchers {
-    Clear-Host
-    Write-Host "[-] Instalando Launchers de Jogos..." -ForegroundColor Yellow
-    
-    Write-Host "`n>> Steam" -ForegroundColor Cyan
-    Get-FileFromWeb -URL "https://cdn.cloudflare.steamstatic.com/client/installer/SteamSetup.exe" -File "$env:TEMP\Steam.exe"
-    Start-Process -wait "$env:TEMP\Steam.exe" -ArgumentList "/S"
-
-    Write-Host "`n>> Epic Games" -ForegroundColor Cyan
-    Get-FileFromWeb -URL "https://epicgames-download1.akamaized.net/Builds/UnrealEngineLauncher/Installers/Win32/EpicInstaller-15.17.1.msi?launcherfilename=EpicInstaller-15.17.1.msi" -File "$env:TEMP\Epic.msi"
-    Start-Process -wait "$env:TEMP\Epic.msi" -ArgumentList "/quiet"
-
-    Write-Host "`n>> Discord" -ForegroundColor Cyan
-    Get-FileFromWeb -URL "https://dl.discordapp.net/distro/app/stable/win/x86/1.0.9036/DiscordSetup.exe" -File "$env:TEMP\Discord.exe"
-    Start-Process -wait "$env:TEMP\Discord.exe" -ArgumentList "/s"
-
-    Write-Host "`n>> Battle.net" -ForegroundColor Cyan
-    Get-FileFromWeb -URL "https://downloader.battle.net/download/getInstaller?os=win&installer=Battle.net-Setup.exe" -File "$env:TEMP\Battle.net.exe"
-    Start-Process -wait "$env:TEMP\Battle.net.exe" -ArgumentList '--lang=ptBR --installpath="C:\Program Files (x86)\Battle.net"'
-
-    Write-Host "`n>> Valorant / Riot" -ForegroundColor Cyan
-    Get-FileFromWeb -URL "https://valorant.secure.dyn.riotcdn.net/channels/public/x/installer/current/live.live.ap.exe" -File "$env:TEMP\Valorant.exe"
-    Start-Process -wait "$env:TEMP\Valorant.exe"
-
-    Write-Host "`n[+] Launchers baixados e instalados!" -ForegroundColor Green
-    Pause
+function Menu-Launchers {
+    do {
+        Clear-Host
+        Write-Host "==============================================================" -ForegroundColor Yellow
+        Write-Host "                   LAUNCHERS DE JOGOS                         " -ForegroundColor White
+        Write-Host "==============================================================" -ForegroundColor Yellow
+        Write-Host " [1] Steam"
+        Write-Host " [2] Epic Games"
+        Write-Host " [3] Discord"
+        Write-Host " [4] Battle.net"
+        Write-Host " [5] Valorant / Riot"
+        Write-Host " [0] Voltar"
+        Write-Host ""
+        
+        $op = Read-Host " Digite o número do programa"
+        switch ($op) {
+            '1' { 
+                Write-Host "`n>> Instalando Steam..." -ForegroundColor Cyan
+                Get-FileFromWeb -URL "https://cdn.cloudflare.steamstatic.com/client/installer/SteamSetup.exe" -File "$env:TEMP\Steam.exe"
+                Start-Process -wait "$env:TEMP\Steam.exe" -ArgumentList "/S"
+                Write-Host " [OK] Steam Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
+            }
+            '2' { 
+                Write-Host "`n>> Instalando Epic Games..." -ForegroundColor Cyan
+                Get-FileFromWeb -URL "https://epicgames-download1.akamaized.net/Builds/UnrealEngineLauncher/Installers/Win32/EpicInstaller-15.17.1.msi?launcherfilename=EpicInstaller-15.17.1.msi" -File "$env:TEMP\Epic.msi"
+                Start-Process -wait "$env:TEMP\Epic.msi" -ArgumentList "/quiet"
+                Write-Host " [OK] Epic Games Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
+            }
+            '3' { 
+                Write-Host "`n>> Instalando Discord..." -ForegroundColor Cyan
+                Get-FileFromWeb -URL "https://dl.discordapp.net/distro/app/stable/win/x86/1.0.9036/DiscordSetup.exe" -File "$env:TEMP\Discord.exe"
+                Start-Process -wait "$env:TEMP\Discord.exe" -ArgumentList "/s"
+                Write-Host " [OK] Discord Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
+            }
+            '4' { 
+                Write-Host "`n>> Instalando Battle.net..." -ForegroundColor Cyan
+                Get-FileFromWeb -URL "https://downloader.battle.net/download/getInstaller?os=win&installer=Battle.net-Setup.exe" -File "$env:TEMP\Battle.net.exe"
+                Start-Process -wait "$env:TEMP\Battle.net.exe" -ArgumentList '--lang=ptBR --installpath="C:\Program Files (x86)\Battle.net"'
+                Write-Host " [OK] Battle.net Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
+            }
+            '5' { 
+                Write-Host "`n>> Instalando Valorant..." -ForegroundColor Cyan
+                Get-FileFromWeb -URL "https://valorant.secure.dyn.riotcdn.net/channels/public/x/installer/current/live.live.ap.exe" -File "$env:TEMP\Valorant.exe"
+                Start-Process -wait "$env:TEMP\Valorant.exe"
+                Write-Host " [OK] Instalador do Valorant Aberto!" -ForegroundColor Green; Start-Sleep -Seconds 2
+            }
+            '0' { return }
+            default { Write-Host " Opção Inválida!" -ForegroundColor Red; Start-Sleep -Seconds 1 }
+        }
+    } while ($true)
 }
 
-function Instalar-Dependencias {
-    Clear-Host
-    Write-Host "[-] Instalando C++ e DirectX (Otimizado)..." -ForegroundColor Yellow
+function Menu-Dependencias {
+    do {
+        Clear-Host
+        Write-Host "==============================================================" -ForegroundColor Yellow
+        Write-Host "                   DEPENDÊNCIAS (C++ e DirectX)               " -ForegroundColor White
+        Write-Host "==============================================================" -ForegroundColor Yellow
+        Write-Host " [1] Visual C++ Redistributables (AIO - Completo)"
+        Write-Host " [2] DirectX Runtimes (Web Setup)"
+        Write-Host " [3] Instalar Ambos"
+        Write-Host " [0] Voltar"
+        Write-Host ""
+        
+        $op = Read-Host " Digite o número"
+        switch ($op) {
+            '1' { 
+                Write-Host "`n>> Instalando Visual C++ Redistributables (AIO)..." -ForegroundColor Cyan
+                $cppPath = "$env:TEMP\VCRedist_AIO.exe"
+                Get-FileFromWeb -URL "https://github.com/abbodi1406/vcredist/releases/latest/download/VisualCppRedist_AIO_x86_x64.exe" -File $cppPath
+                Start-Process -wait $cppPath -ArgumentList "/ai" -WindowStyle Hidden
+                Remove-Item $cppPath -Force -ErrorAction SilentlyContinue
+                Write-Host " [OK] Visual C++ Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
+            }
+            '2' { 
+                Write-Host "`n>> Instalando DirectX Runtimes..." -ForegroundColor Cyan
+                $dxPath = "$env:TEMP\dxwebsetup.exe"
+                Get-FileFromWeb -URL "https://download.microsoft.com/download/1/7/1/1718CCC4-6315-4D8E-9543-8E28A4E18C4C/dxwebsetup.exe" -File $dxPath
+                Start-Process -wait $dxPath -ArgumentList "/Q" -WindowStyle Hidden
+                Remove-Item $dxPath -Force -ErrorAction SilentlyContinue
+                Write-Host " [OK] DirectX Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
+            }
+            '3' {
+                Write-Host "`n>> Instalando C++..." -ForegroundColor Cyan
+                $cppPath = "$env:TEMP\VCRedist_AIO.exe"
+                Get-FileFromWeb -URL "https://github.com/abbodi1406/vcredist/releases/latest/download/VisualCppRedist_AIO_x86_x64.exe" -File $cppPath
+                Start-Process -wait $cppPath -ArgumentList "/ai" -WindowStyle Hidden
+                
+                Write-Host ">> Instalando DirectX..." -ForegroundColor Cyan
+                $dxPath = "$env:TEMP\dxwebsetup.exe"
+                Get-FileFromWeb -URL "https://download.microsoft.com/download/1/7/1/1718CCC4-6315-4D8E-9543-8E28A4E18C4C/dxwebsetup.exe" -File $dxPath
+                Start-Process -wait $dxPath -ArgumentList "/Q" -WindowStyle Hidden
 
-    Write-Host "`n>> Visual C++ Redistributables (AIO)" -ForegroundColor Cyan
-    $cppPath = "$env:TEMP\VCRedist_AIO.exe"
-    Get-FileFromWeb -URL "https://github.com/abbodi1406/vcredist/releases/latest/download/VisualCppRedist_AIO_x86_x64.exe" -File $cppPath
-    Start-Process -wait $cppPath -ArgumentList "/ai" -WindowStyle Hidden
-    
-    Write-Host "`n>> DirectX Runtimes (Web Setup)" -ForegroundColor Cyan
-    $dxPath = "$env:TEMP\dxwebsetup.exe"
-    Get-FileFromWeb -URL "https://download.microsoft.com/download/1/7/1/1718CCC4-6315-4D8E-9543-8E28A4E18C4C/dxwebsetup.exe" -File $dxPath
-    Start-Process -wait $dxPath -ArgumentList "/Q" -WindowStyle Hidden
-
-    Remove-Item $cppPath, $dxPath -Force -ErrorAction SilentlyContinue
-    Write-Host "`n[+] Dependências base instaladas com sucesso!" -ForegroundColor Green
-    Pause
+                Remove-Item $cppPath, $dxPath -Force -ErrorAction SilentlyContinue
+                Write-Host " [OK] Todas as dependências instaladas!" -ForegroundColor Green; Start-Sleep -Seconds 2
+            }
+            '0' { return }
+            default { Write-Host " Opção Inválida!" -ForegroundColor Red; Start-Sleep -Seconds 1 }
+        }
+    } while ($true)
 }
 
-function Menu-Instalador {
+function Menu-InstaladorGeral {
     do {
         Clear-Host
         Write-Host "==============================================================" -ForegroundColor Yellow
@@ -175,10 +268,10 @@ function Menu-Instalador {
         
         $subEscolha = Read-Host " Escolha uma categoria"
         switch ($subEscolha) {
-            '1' { Instalar-Navegadores }
-            '2' { Instalar-Utilidades }
-            '3' { Instalar-Launchers }
-            '4' { Instalar-Dependencias }
+            '1' { Menu-Navegadores }
+            '2' { Menu-Utilidades }
+            '3' { Menu-Launchers }
+            '4' { Menu-Dependencias }
             '0' { return }
             default { Write-Host " Opção Inválida!" -ForegroundColor Red; Start-Sleep -Seconds 1 }
         }
@@ -346,7 +439,7 @@ do {
     $escolha = Read-Host " Escolha uma opção"
 
     switch ($escolha) {
-        '1' { Menu-Instalador }
+        '1' { Menu-InstaladorGeral }
         '2' { Aplicar-Regedit }
         '3' { Aplicar-PowerPlan }
         '4' { Instalar-Office }
