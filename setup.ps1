@@ -191,20 +191,19 @@ function Menu-Utilidades {
             '6' { 
                 Write-Host "`n>> Preparando a instalação do Adobe Reader..." -ForegroundColor Cyan
                 
-                # Link direto oficial do servidor Enterprise da Adobe (Instalador Offline x64 PT-BR)
-                # Sendo a versão offline completa, não precisa de baixar pacotes extra e não dá erro de inicialização.
-                $AdobeUrl = "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/2400320112/AcroRdrDCx642400320112_pt_BR.exe"
+                # Link direto oficial do servidor da Adobe (Instalador Offline x64 PT-BR)
+                $AdobeUrl = "https://ardownload3.adobe.com/pub/adobe/acrobat/win/AcrobatDC/2500120997/AcroRdrDCx642500120997_pt_BR.exe"
                 $AdobePath = "$env:TEMP\AdobeReaderOffline.exe"
                 
                 if (Test-Path $AdobePath) { Remove-Item $AdobePath -Force -ErrorAction SilentlyContinue }
                 
-                Write-Host ">> Baixando o instalador completo (Aguarde, o arquivo tem aprox. 300MB)..." -ForegroundColor Yellow
+                Write-Host ">> Baixando o instalador completo (Aguarde, o arquivo tem aprox. 350MB)..." -ForegroundColor Yellow
                 Get-FileFromWeb -URL $AdobeUrl -File $AdobePath
                 
                 if (Test-Path $AdobePath) {
                     Write-Host ">> Executando instalação 100% silenciosa..." -ForegroundColor Cyan
                     
-                    # Argumentos oficiais da Adobe para o arquivo Offline instalar sem piscar na tela
+                    # Argumentos oficiais da Adobe para o ficheiro Offline instalar sem ecrãs de confirmação
                     Start-Process -wait $AdobePath -ArgumentList "/sAll /rs /msi EULA_ACCEPT=YES"
                     
                     Write-Host " [OK] Adobe Reader Instalado com sucesso!" -ForegroundColor Green; Start-Sleep -Seconds 2
