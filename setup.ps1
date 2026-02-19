@@ -157,9 +157,44 @@ function Menu-Utilidades {
             }
             '3' { 
                 Write-Host "`n>> Instalando AnyDesk..." -ForegroundColor Cyan
-                Get-FileFromWeb -URL "https://download.anydesk.com/AnyDesk.exe" -File "$env:TEMP\AnyDesk.exe"
-                Start-Process -wait "$env:TEMP\AnyDesk.exe" -ArgumentList "--install `"$env:ProgramFiles(x86)\AnyDesk`" --start-with-win --silent"
-                Write-Host " [OK] AnyDesk Instalado!" -ForegroundColor Green; Start-Sleep -Seconds 2
+                $AnyDeskPath = "$env:TEMP\AnyDesk.exe"
+                if (Test-Path $AnyDeskPath) { Remove-Item $AnyDeskPath -Force -ErrorAction SilentlyContinue }
+                
+                # Baixa o AnyDesk oficial
+                Get-FileFromWeb -URL "https://download.anydesk.com/AnyDesk.exe" -File $AnyDeskPath
+                
+                if (Test-Path $AnyDeskPath) {
+                    Write-Host ">> Executando instalação em segundo plano..." -ForegroundColor Cyan
+                    # Instala na pasta Program Files (x86) e configura para iniciar com o Windows
+                    Start-Process -wait $AnyDeskPath -ArgumentList "--install `"C:\Program Files (x86)\AnyDesk`" --start-with-win --silent"
+                    
+                    Write-Host ">> Forçando a criação dos atalhos..." -ForegroundColor Cyan
+                    $TargetExe = "C:\Program Files (x86)\AnyDesk\AnyDesk.exe"
+                    
+                    # Espera até 5 segundos para o executável aparecer na pasta final
+                    $tentativas = 0
+                    while (-not (Test-Path $TargetExe) -and $tentativas -lt 5) { Start-Sleep -Seconds 1; $tentativas++ }
+                    
+                    if (Test-Path $TargetExe) {
+                        $WshShell = New-Object -comObject WScript.Shell
+                        
+                        # 1. Cria o atalho na Área de Trabalho
+                        $Desktop = [Environment]::GetFolderPath("Desktop")
+                        $ShortcutDesk = $WshShell.CreateShortcut("$Desktop\AnyDesk.lnk")
+                        $ShortcutDesk.TargetPath = $TargetExe
+                        $ShortcutDesk.Save()
+                        
+                        # 2. Cria o atalho no Menu Iniciar
+                        $StartMenu = [Environment]::GetFolderPath("Programs")
+                        $ShortcutStart = $WshShell.CreateShortcut("$StartMenu\AnyDesk.lnk")
+                        $ShortcutStart.TargetPath = $TargetExe
+                        $ShortcutStart.Save()
+                    }
+                    
+                    Write-Host " [OK] AnyDesk Instalado com sucesso!" -ForegroundColor Green; Start-Sleep -Seconds 2
+                } else {
+                    Write-Host " [!] Erro ao baixar o AnyDesk!" -ForegroundColor Red; Start-Sleep -Seconds 2
+                }
             }
             '4' { 
                 Write-Host "`n>> Instalando Discord..." -ForegroundColor Cyan
