@@ -693,13 +693,20 @@ function Ativar-Sistema {
 }
 
 # ============================================================================
-# 6. CONTATO WHATSAPP
+# 6. CONTATO WHATSAPP E APOIO PIXGG
 # ============================================================================
 function Abrir-WhatsApp {
     Clear-Host
     Write-Host "[-] Abrindo WhatsApp de Renan Portes..." -ForegroundColor Green
     $zapUrl = "https://wa.me/5544988279740?text=Ol%C3%A1%2C%20Renan!%20Estou%20usando%20o%20seu%20Toolkit%20e%20preciso%20de%20suporte."
     Start-Process $zapUrl
+}
+
+function Abrir-Apoio {
+    Clear-Host
+    Write-Host "[-] Abrindo página de apoio PixGG (pixgg.com.br/rzao)..." -ForegroundColor Cyan
+    $pixUrl = "https://pixgg.com.br/rzao"
+    Start-Process $pixUrl
 }
 
 # ============================================================================
@@ -718,6 +725,7 @@ function Mostrar-Menu {
     Write-Host " [4] Instalação do Office 2024 LTSC"
     Write-Host " [5] Ativação de Windows / Office (MAS)"
     Write-Host " [6] Contato (WhatsApp Direto)"
+    Write-Host " [7] Apoiar o Projeto (PixGG)"
     Write-Host " [0] Sair"
     Write-Host ""
 }
@@ -733,6 +741,7 @@ do {
         '4' { Instalar-Office }
         '5' { Ativar-Sistema }
         '6' { Abrir-WhatsApp }
+        '7' { Abrir-Apoio }
         '0' { 
             Clear-Host
             Write-Host "Saindo... Obrigado por usar o WIN-TOOLKIT!" -ForegroundColor Green

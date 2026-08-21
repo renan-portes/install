@@ -97,7 +97,23 @@ irm tinyurl.com/renan-tool | iex
 
 - **Sistemas Suportados**: Windows 10 / Windows 11 (64-bit)
 - **PowerShell**: Versão 5.1 ou superior (nativa do Windows 10/11)
-- **Privilégios**: Executar como Administrador
+---
+
+## ☕ Apoie o Projeto
+
+Se o **WIN-TOOLKIT** facilitou seu dia a dia e acelerou suas formatações, considere fazer uma contribuição para incentivar o desenvolvimento contínuo!
+
+<br>
+
+<div align="center">
+
+[![Apoie via Pix](https://img.shields.io/badge/Apoie%20via%20Pix-PixGG%20%2F%20rzao-32BCAD?style=for-the-badge&logo=pix&logoColor=white)](https://pixgg.com.br/rzao)
+
+👉 [**pixgg.com.br/rzao**](https://pixgg.com.br/rzao)
+
+</div>
+
+<br>
 
 ---
 
@@ -111,6 +127,9 @@ irm tinyurl.com/renan-tool | iex
 <br>
 
 [![WhatsApp](https://img.shields.io/badge/WhatsApp-Suporte%20Direto-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://wa.me/5544988279740)
+[![PixGG](https://img.shields.io/badge/PixGG-Apoiar%20Projeto-32BCAD?style=for-the-badge&logo=pix&logoColor=white)](https://pixgg.com.br/rzao)
+
+<br>
 
 📱 **(44) 98827-9740**
 
