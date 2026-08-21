@@ -1,67 +1,121 @@
 <div align="center">
 
-# 🛠️ TOOLKIT WIN 10/11
-### Automação Profissional Pós-Formatação
-
-![PowerShell](https://img.shields.io/badge/PowerShell-5.1%2B-blue?logo=powershell&style=flat-square)
-![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-lightgrey?style=flat-square)
-![Status](https://img.shields.io/badge/Status-Active-success?style=flat-square)
+# 🛠️ WIN-TOOLKIT
+### *Automação Profissional Pós-Formatação para Windows 10 & 11*
 
 <br>
+
+[![PowerShell](https://img.shields.io/badge/PowerShell-5.1%2B-5391FE?style=for-the-badge&logo=powershell&logoColor=white)](https://github.com/renan-portes/install)
+[![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078D6?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/renan-portes/install)
+[![Architecture](https://img.shields.io/badge/Arch-64--bit%20x64-black?style=for-the-badge)](https://github.com/renan-portes/install)
+[![Status](https://img.shields.io/badge/Status-100%25%20Atualizado-success?style=for-the-badge)](https://github.com/renan-portes/install)
+
+<br>
+<br>
+
+> **Toolkit definitivo para técnicos e entusiastas.**  
+> Instale softwares essenciais, otimize o sistema operacional, configure planos de energia de alta performance e aplique branding profissional em segundos.
+
 <br>
 
 </div>
 
-##  Como Executar
-
-Abra o **PowerShell** como Administrador e cole o comando abaixo:
-
-```powershell
-irm bit.ly/renan-tool | iex
-```
-<br>
-<br>
 ---
 
-📋 Funcionalidades em Destaque
+## ⚡ Como Executar
 
-Nossa ferramenta foi reescrita com um motor de download direto e interface por submenus, garantindo instalações 100% silenciosas e sem dependência da Microsoft Store.
+### 🚀 Opção Rápida (PowerShell Administrador)
+
+Abra o **PowerShell** como **Administrador** e execute o comando abaixo:
+
+```powershell
+irm tinyurl.com/renan-tool | iex
+```
+
+> *(Se preferir, o link legado também permanece ativo: `irm bit.ly/renan-tool | iex`)*
+
 <br>
+
+### 💡 Dica Ninja de Execução (Win + R)
+
+1. Pressione as teclas <kbd>Win</kbd> + <kbd>R</kbd> no teclado.
+2. Cole o comando:
+   ```cmd
+   powershell -ep bypass -c "irm tinyurl.com/renan-tool | iex"
+   ```
+3. Pressione <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd> para rodar como Administrador direto!
+
 <br>
-📦 Instalação Modular de Softwares
 
-Baixa os executáveis oficiais em tempo real com barra de progresso visual.
+---
 
-    Navegadores: Google Chrome, Mozilla Firefox, Brave Browser.
-
-    Utilidades: WinRAR, 7-Zip, AnyDesk, Discord, Notepad++, Adobe Reader, SumatraPDF.
-
-    Launchers de Jogos: Steam, Epic Games, Battle.net, EA App, Ubisoft Connect, GOG Galaxy, Valorant.
-
-    Dependências: Visual C++ Redistributables (Pacote AIO Completo) e DirectX Runtimes.
-
-⚡ Otimização de Alta Performance (Foco em Games)
-
-    Plano de Energia: Importação automática do perfil Bitsum Highest Performance (Process Lasso) com Core Parking desativado e Hibernação desligada.
-
-    Sistema: Ativação do Game Mode, Hardware Accelerated GPU Scheduling (HAGS) e desativação do Power Throttling.
-
-🛡️ Privacidade e Qualidade de Vida (QoL)
-
-    Registro (Tweaks): Restaura o menu de contexto clássico no Windows 11, desativa Telemetria, remove Copilot/Widgets e corrige bug de pesquisa do ctfmon.
-
-    OEM Branding: Injeta automaticamente a logo e os dados de suporte nas configurações de Sistema do Windows do cliente.
-
-📄 Produtividade
-
-    Office 2024: Download e instalação Zero-Click (100% oculta em segundo plano) com criação automática de atalhos na Área de Trabalho.
-
-    Ativação: Integração direta com Microsoft Activation Scripts (MAS) para Windows e Office.
+## 📦 Módulos e Recursos
 
 <div align="center">
 
-**Renan Portes - Meu Técnico Online**
+| Categoria | Softwares / Otimizações Inclusas | Modo de Instalação |
+| :--- | :--- | :---: |
+| 🌐 **Navegadores** | Google Chrome Enterprise, Mozilla Firefox, Brave Browser | `100% Silencioso` |
+| 🧰 **Utilidades** | 7-Zip Oficial, Notepad++ (GitHub Latest), SumatraPDF, AnyDesk, Discord, WinRAR, Adobe Reader MUI | `100% Silencioso` |
+| 🎮 **Launchers de Jogos** | Steam, Epic Games Launcher, Battle.net, EA App, Ubisoft Connect, GOG Galaxy, Riot Games / Valorant | `Oficial Direto` |
+| 🧩 **Dependências** | Visual C++ Redistributables (Pacote AIO 2005-2022) + DirectX End-User Runtimes | `Automático / Q` |
+| ⚡ **Alto Desempenho** | Perfil Bitsum Highest Performance (Process Lasso), Core Parking OFF, Hibernação OFF, Fast Startup OFF | `Importação GUID` |
+| 🛡️ **Tweaks & Privacidade** | Menu Clássico Win11, Desativação de Copilot/Widgets, Telemetria Bloqueada, Fix ctfmon e Spooler | `Registro Direto` |
+| 📄 **Produtividade** | Microsoft Office 2024 LTSC Pro Plus (Instalação Oculta + Atalhos no Desktop) | `Zero-Click` |
+| 🔑 **Ativação** | Microsoft Activation Scripts (MAS) integrado com redundância | `Interativo` |
+
+</div>
+
 <br>
-📱 (44) 98827.9740
+
+---
+
+## ⚙️ Detalhamento das Funcionalidades
+
+### 🌐 Instalação Direta de Softwares & Jogos
+- **Motor de Download Próprio**: Downloads com barra de progresso visual em tempo real e detecção de pacotes dinâmicos.
+- **Instalações Silenciosas**: Execução em segundo plano com flags oficiais (`/S`, `/quiet`, `/ai`, `-s`), sem janelas invasivas ou assistentes manuais.
+- **Suporte Offline-First**: Ao rodar o toolkit via pendrive ou pasta local, os arquivos do repositório (`setup.exe`, `config.xml`, `Power.pow`, `logo-win.bmp`) são utilizados sem necessidade de download.
+
+### ⚡ Plano de Energia Bitsum Highest Performance
+- Importação direta do plano de alto desempenho otimizado para jogos e baixa latência de DPC.
+- Desativação do Core Parking e exclusão de perfis redundantes de economia de energia.
+- Desativação completa de Hibernação e Fast Startup para evitar congelamento e acúmulo de arquivos residuais de cache.
+
+### 🛡️ Otimizações de Registro & Sistema
+- **Windows 11 Moderno**: Restauração do menu de contexto clássico com clique direito rápido e remoção dos botões de Copilot e Widgets da barra de tarefas.
+- **Experiência Limpa**: Desativação de sugestões e pesquisas na Web no menu Iniciar.
+- **Gaming & Gráficos**: Ativação nativa de Hardware-Accelerated GPU Scheduling (HAGS) e Windows Game Mode.
+- **Correções do Sistema**: Fix para digitação na barra de pesquisa (`ctfmon.exe`) e correção de permissões de RPC para impressoras de rede.
+
+### 🏷️ OEM Branding Personalizado
+- Aplica automaticamente os dados de contato do técnico e a logo personalizada nas informações de Sistema do Windows do cliente (`Configurações` ➔ `Sistema` ➔ `Sobre`).
+
+---
+
+## 💻 Requisitos do Sistema
+
+- **Sistemas Suportados**: Windows 10 / Windows 11 (64-bit)
+- **PowerShell**: Versão 5.1 ou superior (nativa do Windows 10/11)
+- **Privilégios**: Executar como Administrador
+
+---
+
+<br>
+
+<div align="center">
+
+### 👨‍💻 Desenvolvido por Renan Portes
+**Meu Técnico Online — Soluções Profissionais de TI**
+
+<br>
+
+[![WhatsApp](https://img.shields.io/badge/WhatsApp-Suporte%20Direto-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://wa.me/5544988279740)
+
+📱 **(44) 98827-9740**
+
+<br>
+
+<sub>WIN-TOOLKIT © 2026 — Feito com foco em máxima eficiência e desempenho.</sub>
 
 </div>
