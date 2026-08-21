@@ -24,26 +24,14 @@
 
 ## ⚡ Como Executar
 
-### 🚀 Opção Rápida (PowerShell Administrador)
-
-Abra o **PowerShell** como **Administrador** e execute o comando abaixo:
+Abra o **PowerShell** (ou Terminal do Windows) e cole o comando abaixo:
 
 ```powershell
 irm tinyurl.com/renan-tool | iex
 ```
 
-> *(Se preferir, o link legado também permanece ativo: `irm bit.ly/renan-tool | iex`)*
-
-<br>
-
-### 💡 Dica Ninja de Execução (Win + R)
-
-1. Pressione as teclas <kbd>Win</kbd> + <kbd>R</kbd> no teclado.
-2. Cole o comando:
-   ```cmd
-   powershell -ep bypass -c "irm tinyurl.com/renan-tool | iex"
-   ```
-3. Pressione <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd> para rodar como Administrador direto!
+> 🛡️ **Auto-Elevação:** Se você abrir o PowerShell em modo usuário comum, o script solicitará permissão e se elevará como Administrador automaticamente.  
+> 🔗 *(O link legado `irm bit.ly/renan-tool | iex` também permanece 100% ativo).*
 
 <br>
 

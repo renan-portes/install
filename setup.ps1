@@ -3,14 +3,15 @@
 # Criado por: Renan Portes
 # Contato: (44) 98827-9740
 # ============================================================================
-#Requires -RunAsAdministrator
-
-# --- AUTO-ELEVAÇÃO ADMINISTRATIVA ---
+# --- AUTO-ELEVAÇÃO ADMINISTRATIVA AUTOMÁTICA ---
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Host "`n>> Solicitando permissão de Administrador..." -ForegroundColor Yellow
     if ($PSCommandPath) {
         Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
-        exit
+    } else {
+        Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -Command `"irm tinyurl.com/renan-tool | iex`"" -Verb RunAs
     }
+    exit
 }
 
 # --- CONFIGURAÇÕES GLOBAIS ---
